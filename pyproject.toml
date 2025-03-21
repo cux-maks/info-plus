@@ -1,0 +1,50 @@
+[tool.poetry]
+name = "kakaotalk-chatbot"
+version = "0.1.0"
+description = "KakaoTalk Chatbot Template"
+authors = ["Your Name <your.email@example.com>"]
+readme = "README.md"
+packages = [{include = "app"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.110.0"
+uvicorn = {extras = ["standard"], version = "^0.27.1"}
+sqlalchemy = "^2.0.28"
+mysqlclient = "^2.2.4"
+python-dotenv = "^1.0.1"
+pydantic = {extras = ["email"], version = "^2.6.3"}
+pydantic-settings = "^2.2.1"
+pytest = "^8.3.5"
+pytest-cov = "^6.0.0"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.11.2"
+black = "^24.2.0"
+mypy = "^1.8.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+]
+
+[tool.black]
+line-length = 88
+target-version = ['py311']
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+ignore_missing_imports = true 
