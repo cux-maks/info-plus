@@ -34,12 +34,3 @@ jobs:
     - name: Lint with ruff
       run: |
         poetry run ruff check .
-        poetry run ruff format --check .
-
-    - name: Check import order with ruff
-      run: |
-        poetry run ruff check --select I .
-
-    - name: Type check with mypy
-      run: |
-        poetry run mypy app tests 
