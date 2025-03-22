@@ -17,7 +17,7 @@ from app.main import app
 class TestKakaoRouter:
     """카카오톡 챗봇 라우터에 대한 테스트 스위트.
 
-    각 테스트 케이스는 FastAPI TestClient를 사용하여 
+    각 테스트 케이스는 FastAPI TestClient를 사용하여
     카카오톡 메시지 처리 엔드포인트의 동작을 검증합니다.
 
     Attributes:

@@ -75,7 +75,7 @@ class TestTextUtils:
             text="전혀 다른 내용입니다",
             keywords=case["input"]["keywords"]
         )
-        assert result == False
+        assert not result
 
     def test_create_formatted_list(self, test_data: Dict[str, Any]):
         """create_formatted_list 함수에 대한 테스트.
