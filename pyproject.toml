@@ -3,7 +3,6 @@ name = "kakaotalk-chatbot"
 version = "0.1.0"
 description = "KakaoTalk Chatbot Template"
 authors = ["Your Name <your.email@example.com>"]
-readme = "README.md"
 packages = [{include = "app"}]
 
 [tool.poetry.dependencies]

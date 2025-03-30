@@ -4,9 +4,9 @@ services:
   app:
     build:
       context: .
-      dockerfile: docker/Dockerfile
+      dockerfile: app/Dockerfile
     ports:
-      - "${PORT}:${PORT}"
+      - '${PORT}:${PORT}'
     environment:
       - APP_NAME=${APP_NAME}
       - ENVIRONMENT=${ENVIRONMENT}
@@ -26,7 +26,7 @@ services:
   db:
     image: mysql:8.0
     ports:
-      - "${DB_PORT}:${DB_PORT}"
+      - '${DB_PORT}:${DB_PORT}'
     environment:
       - MYSQL_DATABASE=${DB_NAME}
       - MYSQL_USER=${DB_USER}
@@ -37,4 +37,4 @@ services:
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
 
 volumes:
-  mysql_data: 
+  mysql_data:
