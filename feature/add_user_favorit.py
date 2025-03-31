@@ -23,7 +23,7 @@ class SubscriptionRequest(BaseModel):
     category_id: int = Field(..., example=1)
 
 # 사용자 카테고리 구독 API
-@router.post("/add", responses={
+@router.post("/adduserfavorit", responses={
     200: {
         "description": "Successful Response",
         "content": {
