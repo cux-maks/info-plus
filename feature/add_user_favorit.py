@@ -1,8 +1,10 @@
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
+import os
+
 import mysql.connector
 from dotenv import load_dotenv
-import os
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, Field
+
 load_dotenv()
 router = APIRouter()
 
