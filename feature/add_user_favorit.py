@@ -10,7 +10,6 @@ router = APIRouter()
 
 # DB 연결 함수
 def get_db_connection():
-    db_name = os.getenv("DB_NAME")  # 환경 변수에서 DB 이름 가져오기
     return mysql.connector.connect(
         host=os.getenv("DB_HOST"),
         port=os.getenv("DB_PORT"),
