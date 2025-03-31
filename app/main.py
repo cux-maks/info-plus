@@ -2,8 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers.message import router as kakao_router
-
-from feature.add_user_favorit import router as add_user_favorit_router 
+from feature.add_user_favorit import router as add_user_favorit_router
 
 app = FastAPI(
     title="KakaoTalk Chatbot API",
