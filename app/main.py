@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers.message import router as kakao_router
 
+from feature.add_user_favorit import router as add_user_favorit_router 
+
 app = FastAPI(
     title="KakaoTalk Chatbot API",
     description="KakaoTalk Chatbot Template API",
@@ -20,6 +22,8 @@ app.add_middleware(
 
 # 라우터 등록
 app.include_router(kakao_router)
+app.include_router(add_user_favorit_router)  # add_user_favorit 라우터 등록
+
 
 @app.get("/")
 async def root():
