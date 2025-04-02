@@ -18,7 +18,7 @@ jobs:
 
     - name: Build and start containers
       run: |
-        docker-compose up -d --build
+        docker-compose -f docker-compose.test.yml up -d --build
         # 데이터베이스가 완전히 준비될 때까지 대기
         sleep 10
 
