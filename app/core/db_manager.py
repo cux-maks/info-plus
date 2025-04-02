@@ -1,10 +1,10 @@
 import os
+import time
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
-from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.exc import OperationalError
-import time
+from sqlalchemy.orm import scoped_session, sessionmaker
 
 from app.models.base import Base
 
@@ -14,7 +14,7 @@ class DBManager:
     def __init__(self):
         db_url = f"postgresql+psycopg://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}"
         self.engine = None
-        for i in range(10):
+        for _ in range(10):
             try:
                 self.engine = create_engine(db_url, echo=True)
                 # 연결 테스트
