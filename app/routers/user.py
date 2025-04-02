@@ -30,3 +30,34 @@ def add_category(request: SubscriptionRequest, db: Session = db_dependency):
     db.refresh(new_subscription)
 
     return {"message": "Subscription successful!"}
+
+@router.delete("/delete/favorit")
+def delete_category(request: SubscriptionRequest, db: Session = db_dependency):
+    # 1️⃣ 사용자가 실제 존재하는지 확인
+    user_exists = db.query(Users).filter(Users.user_id == request.user_id).first()
+    if not user_exists:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    # 2️⃣ 요청한 카테고리가 실제 존재하는지 확인
+    category_exists = db.query(Category).filter(Category.id == request.category_id).first()
+    if not category_exists:
+        raise HTTPException(status_code=404, detail="Category not found.")
+
+    # 3️⃣ 기존 구독이 있는지 확인
+    existing_subscription = db.query(UserCategory).filter(
+        UserCategory.user_id == request.user_id,
+        UserCategory.category_id == request.category_id
+    ).first()
+
+    if not existing_subscription:
+        raise HTTPException(status_code=404, detail="Subscription not found.")
+
+    if not existing_subscription.is_active:
+        raise HTTPException(status_code=400, detail="Subscription is already inactive.")
+
+    # 4️⃣ is_active 값을 False로 변경 (Soft Delete)
+    existing_subscription.is_active = False
+    db.commit()
+    db.refresh(existing_subscription)
+
+    return {"message": "Subscription successfully deactivated."}
