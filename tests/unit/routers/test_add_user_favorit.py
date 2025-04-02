@@ -71,7 +71,7 @@ def test_client():
 # ✅ 새로운 카테고리 구독이 성공적으로 추가되는지 확인
 def test_add_user_favorit_success(test_db, test_client):
     response = test_client.post(
-        "/adduserfavorit",
+        "/user/add/favorit",
         json={"user_id": "user123", "category_id": 1}
     )
     assert response.status_code == 200
@@ -79,9 +79,9 @@ def test_add_user_favorit_success(test_db, test_client):
 
 # ✅ 이미 구독한 카테고리를 다시 추가하면 400 에러 반환 확인
 def test_add_user_favorit_duplicate(test_db, test_client):
-    test_client.post("/adduserfavorit", json={"user_id": "user123", "category_id": 1})
+    test_client.post("/user/add/favorit", json={"user_id": "user123", "category_id": 1})
 
-    response = test_client.post("/adduserfavorit", json={"user_id": "user123", "category_id": 1})
+    response = test_client.post("/user/add/favorit", json={"user_id": "user123", "category_id": 1})
 
     assert response.status_code == 400
     assert response.json() == {"detail": "Already subscribed to this category."}
