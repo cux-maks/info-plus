@@ -28,18 +28,7 @@ jobs:
 
     - name: Run tests in container
       run: |
-        docker compose exec -T app poetry run pytest tests/ --cov=app --cov-report=xml --cov-report=term-missing
-
-    - name: Copy coverage report from container
-      run: |
-        docker cp $(docker compose ps -q app):/app/coverage.xml ./coverage.xml
-
-    - name: Upload coverage reports to Codecov
-      uses: codecov/codecov-action@v4
-      with:
-        file: ./coverage.xml
-        fail_ci_if_error: true
-        token: ${{ secrets.CODECOV_TOKEN }}
+        docker compose exec -T app poetry run pytest tests/ --cov=app --cov-report=term --cov-fail-under=80
 
     - name: Stop containers
       if: always()
