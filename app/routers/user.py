@@ -12,7 +12,7 @@ class SubscriptionRequest(BaseModel):
     user_id: str = Field(..., example="user123")
     category_id: int = Field(..., example=1)
 
-@router.post("/adduserfavorit")
+@router.post("/add/favorit")
 def add_category(request: SubscriptionRequest, db: Session = db_dependency):
     # 중복 체크
     existing_subscription = db.query(UserCategory).filter(
