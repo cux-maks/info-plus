@@ -15,6 +15,10 @@ jobs:
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
+    
+    - name: Set up .env
+      run: |
+        cp .env.example .env
 
     - name: Build and start containers
       run: |
