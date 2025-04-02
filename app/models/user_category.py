@@ -1,7 +1,9 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Boolean,  DateTime, func
+
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, func
 from sqlalchemy.orm import relationship
-from app.models.base import Base 
-from datetime import datetime
+
+from app.models.base import Base
+
 
 class UserCategory(Base):
     __tablename__ = "user_category"

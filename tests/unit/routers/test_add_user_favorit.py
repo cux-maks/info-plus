@@ -2,10 +2,11 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from app.main import app
-from app.core.db_manager import db_manager
-from app.models import Base, Users, Category, Feature, UserCategory
 from sqlalchemy.sql import text
+
+from app.core.db_manager import db_manager
+from app.main import app
+from app.models import Base, Category, Feature, UserCategory, Users
 
 # ✅ 테스트용 SQLite 파일 DB (세션 유지)
 TEST_DATABASE_URL = "sqlite:///./test.db"

@@ -1,4 +1,5 @@
 import os
+
 from dotenv import load_dotenv
 
 # 루트 디렉터리의 .env 파일 로드
