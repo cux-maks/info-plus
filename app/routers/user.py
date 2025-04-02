@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from app.core.db_manager import db_manager
 from app.models.user_category import UserCategory
+from app.utils.db_manager import db_manager
 
 router = APIRouter()
 db_dependency = Depends(db_manager.get_db)  # 전역 변수로 설정

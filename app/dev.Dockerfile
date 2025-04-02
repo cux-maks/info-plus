@@ -18,4 +18,4 @@ COPY . .
 RUN poetry install --no-interaction --no-ansi
 
 # 실행
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8200"] 
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8200", "--reload"] 
