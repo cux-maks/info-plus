@@ -25,5 +25,7 @@ def add_category(request: SubscriptionRequest, db: Session = Depends(db_manager.
     new_subscription = UserCategory(user_id=request.user_id, category_id=request.category_id)
     db.add(new_subscription)
     db.commit()
+    db.refresh(new_subscription)
+
 
     return {"message": "Subscription successful!"}
