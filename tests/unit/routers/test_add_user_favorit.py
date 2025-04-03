@@ -40,7 +40,7 @@ def test_db(setup_database):
     feature = Feature(feature_type="News")
     db.add_all([user, feature])
     db.commit()
-    
+
     db.refresh(user)
     db.refresh(feature)
 
