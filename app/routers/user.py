@@ -1,8 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.models.user_category import UserCategory
+from app.models.category import Category 
+from app.models.users import Users  
 from app.utils.db_manager import db_manager
 
 router = APIRouter()
@@ -32,21 +34,25 @@ def add_category(request: SubscriptionRequest, db: Session = db_dependency):
     return {"message": "Subscription successful!"}
 
 @router.delete("/delete/favorit")
-def delete_category(request: SubscriptionRequest, db: Session = db_dependency):
+def delete_category(
+    user_id: str = Query(..., description="User ID"),
+    category_id: int = Query(..., description="Category ID"),
+    db: Session = db_dependency
+):
     # 1️⃣ 사용자가 실제 존재하는지 확인
-    user_exists = db.query(Users).filter(Users.user_id == request.user_id).first()
+    user_exists = db.query(Users).filter(Users.user_id == user_id).first()
     if not user_exists:
         raise HTTPException(status_code=404, detail="User not found.")
 
     # 2️⃣ 요청한 카테고리가 실제 존재하는지 확인
-    category_exists = db.query(Category).filter(Category.id == request.category_id).first()
+    category_exists = db.query(Category).filter(Category.category_id == category_id).first()
     if not category_exists:
         raise HTTPException(status_code=404, detail="Category not found.")
 
     # 3️⃣ 기존 구독이 있는지 확인
     existing_subscription = db.query(UserCategory).filter(
-        UserCategory.user_id == request.user_id,
-        UserCategory.category_id == request.category_id
+        UserCategory.user_id == user_id,
+        UserCategory.category_id == category_id
     ).first()
 
     if not existing_subscription:

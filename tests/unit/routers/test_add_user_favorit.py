@@ -46,6 +46,11 @@ def test_db(setup_database):
     db.commit()
     db.refresh(feature)  # ✅ id 생성 확인
 
+    category = Category(feature_id = 1, category_name = "Tech")
+    db.add(category)
+    db.commit()
+    db.refresh(category)  # ✅ id 생성 확인
+
     yield db  # ✅ 세션 제공
 
     db.rollback()  # ✅ 테스트 종료 후 변경 사항 되돌리기
