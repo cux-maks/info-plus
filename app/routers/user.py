@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from app.models.category import Category
 from app.models.user_category import UserCategory
-from app.models.category import Category 
-from app.models.users import Users  
+from app.models.users import Users
 from app.utils.db_manager import db_manager
 
 router = APIRouter()
