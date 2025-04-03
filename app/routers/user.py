@@ -39,6 +39,24 @@ def delete_category(
     category_id: int = Query(..., description="Category ID"),
     db: Session = db_dependency
 ):
+    """
+    사용자의 특정 카테고리 구독을 해제하는 엔드포인트입니다.
+
+    Args:
+        user_id (str): 구독을 해제할 사용자의 ID.
+        category_id (int): 사용자가 구독 해제할 카테고리의 ID.
+        db (Session): 데이터베이스 세션.
+
+    Returns:
+        dict: 구독 해제 성공 메시지를 포함한 JSON 응답.
+
+    Raises:
+        HTTPException 404: 사용자가 존재하지 않는 경우.
+        HTTPException 404: 카테고리가 존재하지 않는 경우.
+        HTTPException 404: 해당 사용자의 구독 정보가 없는 경우.
+        HTTPException 400: 이미 구독이 비활성화된 경우.
+    """
+
     # 1️⃣ 사용자가 실제 존재하는지 확인
     user_exists = db.query(Users).filter(Users.user_id == user_id).first()
     if not user_exists:
