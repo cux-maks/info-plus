@@ -67,6 +67,7 @@ def test_db(setup_database):
     db.commit()
     db.rollback()  # ✅ 테스트 종료 후 변경 사항 되돌리기
     db.close()  # ✅ 세션 종료
+    Base.metadata.drop_all(bind=engine)  # ✅ 테스트 끝나면 DB 초기화
 
 # ✅ FastAPI 앱에 테스트용 DB 주입
 def override_get_db():
