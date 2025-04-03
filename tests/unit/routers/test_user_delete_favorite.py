@@ -14,7 +14,7 @@ engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": Fal
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # ✅ DB 초기화 및 테이블 생성
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def setup_database():
     """테스트용 DB 테이블 생성 및 초기화"""
     with engine.connect() as conn:
