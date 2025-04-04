@@ -14,7 +14,7 @@ engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": Fal
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # ✅ DB 초기화 및 테이블 생성
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def setup_database():
     """테스트용 DB 테이블 생성 및 초기화"""
     with engine.connect() as conn:
@@ -22,34 +22,38 @@ def setup_database():
         Base.metadata.drop_all(bind=conn)  # ✅ 기존 테이블 삭제
         Base.metadata.create_all(bind=conn)  # ✅ 테이블 생성
 
-# ✅ DB 세션 생성
+# ✅ DB 세션 생성 및 더미 데이터 삽입
 @pytest.fixture(scope="function")
 def test_db(setup_database):
-    """각 테스트 실행 전 세션을 초기화"""
+    """각 테스트 실행 전 세션을 초기화하고 더미 데이터 삽입"""
     db = TestingSessionLocal()
 
-    # ✅ 기존 데이터 삭제
-    db.query(Users).delete()
-    db.query(Feature).delete()
-    db.query(Category).delete()
+    # ✅ 기존 데이터 삭제 후 초기화
     db.query(UserCategory).delete()
+    db.query(Category).delete()
+    db.query(Feature).delete()
+    db.query(Users).delete()
     db.commit()
 
-    # ✅ 테스트 데이터 삽입
+    # ✅ 더미 데이터 추가 (한 번만 수행)
     user = Users(user_id="user123", user_name="John Doe")
-    db.add(user)
-    db.commit()
-    db.refresh(user)  # ✅ user_id 생성 확인
-
     feature = Feature(feature_type="News")
-    db.add(feature)
+    db.add_all([user, feature])
     db.commit()
-    db.refresh(feature)  # ✅ id 생성 확인
+
+    db.refresh(user)
+    db.refresh(feature)
+
+    category = Category(feature_id=feature.feature_id, category_name="Tech")
+    db.add(category)
+    db.commit()
+    db.refresh(category)
 
     yield db  # ✅ 세션 제공
 
     db.rollback()  # ✅ 테스트 종료 후 변경 사항 되돌리기
     db.close()  # ✅ 세션 종료
+    Base.metadata.drop_all(bind=engine)  # ✅ 테스트 끝나면 DB 초기화
 
 # ✅ 테스트용 FastAPI 의존성 주입 함수 (DB 세션 주입)
 def override_get_db():
@@ -79,9 +83,10 @@ def test_add_user_favorit_success(test_db, test_client):
 
 # ✅ 이미 구독한 카테고리를 다시 추가하면 400 에러 반환 확인
 def test_add_user_favorit_duplicate(test_db, test_client):
-    test_client.post("/user/add/favorit", json={"user_id": "user123", "category_id": 1})
+    """중복 구독 방지 테스트"""
+    response1 = test_client.post("/user/add/favorit", json={"user_id": "user123", "category_id": 1})
+    assert response1.status_code == 200  # ✅ 첫 번째 요청은 성공
 
-    response = test_client.post("/user/add/favorit", json={"user_id": "user123", "category_id": 1})
-
-    assert response.status_code == 400
-    assert response.json() == {"detail": "Already subscribed to this category."}
+    response2 = test_client.post("/user/add/favorit", json={"user_id": "user123", "category_id": 1})
+    assert response2.status_code == 400  # ✅ 두 번째 요청은 중복 에러
+    assert response2.json() == {"detail": "Already subscribed to this category."}
