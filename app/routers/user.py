@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
+from typing import List
 
 from app.models.category import Category
 from app.models.user_category import UserCategory
@@ -85,3 +86,49 @@ def delete_category(
     db.refresh(existing_subscription)
 
     return {"message": "Subscription successfully deactivated."}
+
+class GetCategoryRequest(BaseModel):
+    user_id: str = Field(..., example="user123")
+
+class CategoryResponse(BaseModel):
+    feature_name: str
+    category_name: str
+
+    class Config:
+        orm_mode = True
+
+@router.get("/category", response_model=List[CategoryResponse])
+def get_category_list(
+    user_id: str = Query(..., description="User ID"),
+    db: Session = db_dependency
+):
+    """
+    사용자의 구독 중인 카테고리 목록을 조회하는 API입니다.
+
+    Args:
+        user_id (str): 사용자 ID
+        db (Session): DB 세션
+
+    Returns:
+        List[CategoryResponse]: 구독 중인 카테고리 목록
+    """
+    # 사용자 존재 여부 확인
+    user_exists = db.query(Users).filter(Users.user_id == user_id).first()
+    if not user_exists:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    # 해당 사용자의 활성화된 구독 목록 조회
+    subscriptions = (
+        db.query(UserCategory)
+        .filter(UserCategory.user_id == user_id, UserCategory.is_active == True)
+        .all()
+    )
+
+    # UserCategory 인스턴스의 category 필드를 통해 카테고리 정보 접근
+    return [
+        CategoryResponse(
+            feature_name=sub.category.feature.feature_type,
+            category_name=sub.category.category_name
+        )
+        for sub in subscriptions if sub.category is not None and sub.category.feature is not None
+]
