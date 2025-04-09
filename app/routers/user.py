@@ -3,6 +3,7 @@
 이 모듈은 사용자의 카테고리 구독 관리와 관련된 API 엔드포인트를 제공합니다.
 사용자가 카테고리를 구독하거나 구독을 해제하는 기능과 특정 기능에 따른 카테고리 목록을 조회하는 기능을 포함합니다.
 """
+from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
@@ -110,6 +111,7 @@ def delete_category(
 
     return {"message": "Subscription successfully deactivated."}
 
+
 @router.get(path="/categories/{feature}")
 def get_categories_by_feature(feature: str, db: Session = db_dependency):
     """특정 기능에 해당하는 카테고리 목록을 조회하는 엔드포인트입니다.
@@ -137,4 +139,51 @@ def get_categories_by_feature(feature: str, db: Session = db_dependency):
         message += "아직 지원하는 카테고리가 없어요. 🥲"
 
     return {"message": message}
+
+
+class GetCategoryRequest(BaseModel):
+    user_id: str = Field(..., example="user123")
+
+class CategoryResponse(BaseModel):
+    feature_name: str
+    category_name: str
+
+    class Config:
+        orm_mode = True
+
+@router.get("/category", response_model=List[CategoryResponse])
+def get_category_list(
+    user_id: str = Query(..., description="User ID"),
+    db: Session = db_dependency
+):
+    """
+    사용자의 구독 중인 카테고리 목록을 조회하는 API입니다.
+
+    Args:
+        user_id (str): 사용자 ID
+        db (Session): DB 세션
+
+    Returns:
+        List[CategoryResponse]: 구독 중인 카테고리 목록
+    """
+    # 사용자 존재 여부 확인
+    user_exists = db.query(Users).filter(Users.user_id == user_id).first()
+    if not user_exists:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    # 해당 사용자의 활성화된 구독 목록 조회
+    subscriptions = (
+        db.query(UserCategory)
+        .filter(UserCategory.user_id == user_id, UserCategory.is_active)
+        .all()
+    )
+
+    # UserCategory 인스턴스의 category 필드를 통해 카테고리 정보 접근
+    return [
+        CategoryResponse(
+            feature_name=sub.category.feature.feature_type,
+            category_name=sub.category.category_name
+        )
+        for sub in subscriptions if sub.category is not None and sub.category.feature is not None
+]
 
