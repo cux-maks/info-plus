@@ -17,12 +17,12 @@ from app.main import app
 from app.models import Base, Category, Feature, UserCategory, Users
 from app.utils.db_manager import db_manager
 
-# ✅ 테스트용 SQLite 파일 DB (세션 유지)
+# 테스트용 SQLite 파일 DB (세션 유지)
 TEST_DATABASE_URL = "sqlite:///./test.db"
 engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# ✅ DB 초기화 및 테이블 생성
+# DB 초기화 및 테이블 생성
 @pytest.fixture(scope="function")
 def setup_database():
     """테스트용 DB 테이블 생성 및 초기화를 수행합니다.
@@ -31,14 +31,14 @@ def setup_database():
         None
     """
     with engine.connect() as conn:
-        conn.execute(text("PRAGMA foreign_keys = ON;"))  # ✅ 외래 키 활성화
-        Base.metadata.drop_all(bind=conn)  # ✅ 기존 테이블 삭제
-        Base.metadata.create_all(bind=conn)  # ✅ 테이블 생성
+        conn.execute(text("PRAGMA foreign_keys = ON;"))  # 외래 키 활성화
+        Base.metadata.drop_all(bind=conn)  # 기존 테이블 삭제
+        Base.metadata.create_all(bind=conn)  # 테이블 생성
 
-# ✅ DB 세션 생성 및 더미 데이터 삽입
+# DB 세션 생성
 @pytest.fixture(scope="function")
 def test_db(setup_database):
-    """테스트용 DB 세션을 생성하고 더미 데이터를 삽입합니다.
+    """테스트용 DB 세션을 생성하고 테스트 데이터를 삽입합니다.
 
     Args:
         setup_database: DB 테이블 생성 및 초기화 fixture
@@ -48,40 +48,39 @@ def test_db(setup_database):
     """
     db = TestingSessionLocal()
 
-    # ✅ 기존 데이터 삭제 후 초기화
+    # 기존 데이터 삭제
     db.query(UserCategory).delete()
     db.query(Category).delete()
     db.query(Feature).delete()
     db.query(Users).delete()
     db.commit()
 
-    # ✅ 더미 데이터 추가 (한 번만 수행)
-    user = Users(user_id="user123", user_name="John Doe")
-    feature1 = Feature(feature_type="News")
-    feature2 = Feature(feature_type="Sports")
-    db.add_all([user, feature1, feature2])
+    # 테스트 데이터 삽입
+    feature = Feature(feature_type="news")
+    db.add(feature)
+    db.commit()
+    db.refresh(feature)  # id 생성 확인
+
+    # 카테고리 추가
+    categories = [
+        Category(feature_id=feature.feature_id, category_name="IT/개발"),
+        Category(feature_id=feature.feature_id, category_name="마케팅"),
+        Category(feature_id=feature.feature_id, category_name="디자인"),
+        Category(feature_id=feature.feature_id, category_name="경영/기획"),
+        Category(feature_id=feature.feature_id, category_name="영업/제휴")
+    ]
+    for category in categories:
+        db.add(category)
     db.commit()
 
-    db.refresh(user)
-    db.refresh(feature1)
-    db.refresh(feature2)
+    yield db  # 세션 제공
 
-    category1 = Category(feature_id=feature1.feature_id, category_name="Tech")
-    category2 = Category(feature_id=feature1.feature_id, category_name="Politics")
-    category3 = Category(feature_id=feature2.feature_id, category_name="Football")
-    db.add_all([category1, category2, category3])
     db.commit()
-    db.refresh(category1)
-    db.refresh(category2)
-    db.refresh(category3)
+    db.rollback()  # 테스트 종료 후 변경 사항 되돌리기
+    db.close()  # 세션 종료
+    Base.metadata.drop_all(bind=engine)  # 테스트 끝나면 DB 초기화
 
-    yield db  # ✅ 세션 제공
-
-    db.rollback()  # ✅ 테스트 종료 후 변경 사항 되돌리기
-    db.close()  # ✅ 세션 종료
-    Base.metadata.drop_all(bind=engine)  # ✅ 테스트 끝나면 DB 초기화
-
-# ✅ 테스트용 FastAPI 의존성 주입 함수 (DB 세션 주입)
+# FastAPI 앱에 테스트용 DB 주입
 def override_get_db():
     """테스트용 DB 세션을 생성하고 제공하는 의존성 주입 함수입니다.
 
@@ -94,10 +93,9 @@ def override_get_db():
     finally:
         db.close()
 
-# ✅ FastAPI 앱에 테스트용 DB 주입
 app.dependency_overrides[db_manager.get_db] = override_get_db
 
-# ✅ 테스트 클라이언트 생성
+# 테스트 클라이언트 생성
 @pytest.fixture(scope="function")
 def test_client():
     """테스트용 FastAPI 클라이언트를 생성합니다.
@@ -107,7 +105,7 @@ def test_client():
     """
     return TestClient(app)
 
-# ✅ 존재하는 feature에 대한 카테고리 목록 조회 성공 테스트
+# 존재하는 feature에 대한 카테고리 목록 조회 성공 테스트
 def test_get_categories_by_feature_success(test_db, test_client):
     """존재하는 feature에 대한 카테고리 목록 조회 성공 테스트를 수행합니다.
 
@@ -118,13 +116,15 @@ def test_get_categories_by_feature_success(test_db, test_client):
     Returns:
         None
     """
-    response = test_client.get("/categories/News")
+    response = test_client.get("/user/categories/news")
     assert response.status_code == 200
-    assert "Tech" in response.json()["message"]
-    assert "Politics" in response.json()["message"]
-    assert "Football" not in response.json()["message"]
+    assert "IT/개발" in response.json()["message"]
+    assert "마케팅" in response.json()["message"]
+    assert "디자인" in response.json()["message"]
+    assert "경영/기획" in response.json()["message"]
+    assert "영업/제휴" in response.json()["message"]
 
-# ✅ 존재하지 않는 feature에 대한 카테고리 목록 조회 실패 테스트
+# 존재하지 않는 feature에 대한 카테고리 목록 조회 실패 테스트
 def test_get_categories_by_feature_not_found(test_db, test_client):
     """존재하지 않는 feature에 대한 카테고리 목록 조회 실패 테스트를 수행합니다.
 
@@ -135,11 +135,11 @@ def test_get_categories_by_feature_not_found(test_db, test_client):
     Returns:
         None
     """
-    response = test_client.get("/categories/NonExistentFeature")
+    response = test_client.get("/user/categories/NonExistentFeature")
     assert response.status_code == 404
     assert "Feature not found" in response.json()["detail"]
 
-# ✅ 카테고리가 없는 feature에 대한 카테고리 목록 조회 테스트
+# 카테고리가 없는 feature에 대한 카테고리 목록 조회 테스트
 def test_get_categories_by_feature_empty(test_db, test_client):
     """카테고리가 없는 feature에 대한 카테고리 목록 조회 테스트를 수행합니다.
 
@@ -157,6 +157,6 @@ def test_get_categories_by_feature_empty(test_db, test_client):
     db.commit()
     db.close()
 
-    response = test_client.get("/categories/Movies")
+    response = test_client.get("/user/categories/Movies")
     assert response.status_code == 200
     assert "아직 지원하는 카테고리가 없어요" in response.json()["message"]
