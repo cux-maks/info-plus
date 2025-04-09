@@ -1,7 +1,8 @@
+from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
-from typing import List
 
 from app.models.category import Category
 from app.models.user_category import UserCategory
@@ -120,7 +121,7 @@ def get_category_list(
     # 해당 사용자의 활성화된 구독 목록 조회
     subscriptions = (
         db.query(UserCategory)
-        .filter(UserCategory.user_id == user_id, UserCategory.is_active == True)
+        .filter(UserCategory.user_id == user_id, UserCategory.is_active)
         .all()
     )
 
