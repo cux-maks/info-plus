@@ -49,6 +49,15 @@ def test_db(setup_database):
     db.commit()
     db.refresh(category)
 
+    user_category = UserCategory(
+        user_id=user.user_id,
+        category_id=category.category_id,
+        is_active=True
+    )
+    db.add(user_category)
+    db.commit()
+
+
     yield db  # ✅ 세션 제공
 
     db.rollback()  # ✅ 테스트 종료 후 변경 사항 되돌리기
@@ -90,7 +99,7 @@ def test_get_category_list_success(test_client: TestClient, test_db):
 def test_get_category_list_user_not_found(test_client: TestClient, test_db):
     """존재하지 않는 사용자에 대한 조회 테스트"""
     response = test_client.get(
-        "/category",
+        "/user/category",
         params={"user_id": "invalid_user"}
     )
     assert response.status_code == 404
