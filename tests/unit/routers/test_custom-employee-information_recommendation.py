@@ -1,3 +1,15 @@
+"""사용자 맞춤 채용 공고 추천 API 테스트 모듈.
+
+이 모듈은 /employee/custom-employee-information/recommendation 엔드포인트의
+기능을 테스트합니다.
+
+주요 테스트 항목:
+    - 사용자의 구독 카테고리를 기반으로 한 채용 공고 추천 성공
+    - 존재하지 않는 사용자 처리
+    - 구독 중인 카테고리가 없을 경우 처리
+    - 카테고리에 해당하는 채용 공고가 없을 경우 처리
+"""
+
 import pytest, datetime
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -8,25 +20,45 @@ from app.main import app
 from app.models import Base, Users, Feature, Category, UserCategory, Employee
 from app.utils.db_manager import db_manager
 
-# ✅ 테스트용 SQLite DB 설정
+# 테스트용 SQLite 파일 DB (세션 유지)
 TEST_DATABASE_URL = "sqlite:///./test.db"
 engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# ✅ DB 초기화
+# DB 초기화 및 테이블 생성
 @pytest.fixture(scope="function")
 def setup_database():
-    with engine.connect() as conn:
-        conn.execute(text("PRAGMA foreign_keys = ON;"))
-        Base.metadata.drop_all(bind=conn)
-        Base.metadata.create_all(bind=conn)
+    """테스트용 DB 테이블 생성 및 초기화를 수행합니다.
 
-# ✅ 더미 데이터 삽입
+    Returns:
+        None
+    """    
+    with engine.connect() as conn:
+        conn.execute(text("PRAGMA foreign_keys = ON;"))  # 외래 키 활성화
+        Base.metadata.drop_all(bind=conn)  # 기존 테이블 삭제
+        Base.metadata.create_all(bind=conn)  # 테이블 생성
+
+# DB 세션 생성
 @pytest.fixture(scope="function")
 def test_db(setup_database):
+    """테스트용 DB 세션을 생성하고 테스트 데이터를 삽입합니다.
+
+    Args:
+        setup_database: DB 테이블 생성 및 초기화 fixture
+
+    Yields:
+        Session: 테스트용 DB 세션
+    """
     db = TestingSessionLocal()
 
-    # 더미 데이터 삽입
+    # 기존 데이터 삭제
+    db.query(UserCategory).delete()
+    db.query(Category).delete()
+    db.query(Feature).delete()
+    db.query(Users).delete()
+    db.commit()
+
+    # 테스트 데이터 삽입
     user = Users(user_id="user123", user_name="홍길동")
     feature = Feature(feature_type="employee")
     db.add_all([user, feature])
@@ -45,6 +77,7 @@ def test_db(setup_database):
     db.commit()
     db.refresh(user_category)
 
+    # 채용 공고 추
     job1 = Employee(
         recruit_id="rec1",
         category_id=1,
@@ -74,29 +107,48 @@ def test_db(setup_database):
     db.add_all([job1, job2])
     db.commit()
 
-    yield db
+    yield db # 세션 제공
 
-    db.rollback()
-    db.close()
-    Base.metadata.drop_all(bind=engine)
+    db.commit()
+    db.rollback()  # 테스트 종료 후 변경 사항 되돌리기
+    db.close()  # 세션 종료
+    Base.metadata.drop_all(bind=engine)  # 테스트 끝나면 DB 초기화
 
-# ✅ DB 의존성 오버라이딩
+# FastAPI 앱에 테스트용 DB 주입
 def override_get_db():
+    """테스트용 DB 세션을 생성하고 제공하는 의존성 주입 함수입니다.
+
+    Yields:
+        Session: 테스트용 DB 세션
+    """
     db = TestingSessionLocal()
     try:
         yield db
     finally:
         db.close()
-
 app.dependency_overrides[db_manager.get_db] = override_get_db
 
-# ✅ FastAPI 클라이언트
+# 테스트 클라이언트 생성
 @pytest.fixture(scope="function")
 def test_client():
+    """테스트용 FastAPI 클라이언트를 생성합니다.
+
+    Returns:
+        TestClient: FastAPI 테스트 클라이언트 인스턴스
+    """
     return TestClient(app)
 
 # ✅ 추천 성공 테스트
 def test_recruit_recommendation_success(test_client: TestClient, test_db):
+    """사용자의 구독 카테고리를 기반으로 채용 공고 추천이 정상적으로 수행되는지 테스트합니다.
+
+    Args:
+        test_client (TestClient): FastAPI 테스트 클라이언트
+        test_db: 테스트용 DB 세션 fixture
+
+    Returns:
+        None
+    """
     response = test_client.get("/employee/custom-employee-information/recommendation", params={"user_id": "user123", "limit": 2})
     assert response.status_code == 200
 
@@ -107,12 +159,30 @@ def test_recruit_recommendation_success(test_client: TestClient, test_db):
 
 # ✅ 존재하지 않는 사용자 테스트
 def test_recruit_recommendation_user_not_found(test_client: TestClient, test_db):
+    """존재하지 않는 사용자일 경우 적절한 예외가 발생하는지 테스트합니다.
+
+    Args:
+        test_client (TestClient): FastAPI 테스트 클라이언트
+        test_db: 테스트용 DB 세션 fixture
+
+    Returns:
+        None
+    """
     response = test_client.get("/employee/custom-employee-information/recommendation", params={"user_id": "ghost"})
     assert response.status_code == 404
     assert response.json() == {"detail": "User not found"}
 
 # ✅ 구독 카테고리가 없는 경우 테스트
 def test_recruit_recommendation_no_subscriptions(test_client: TestClient, test_db):
+    """사용자의 구독 카테고리가 모두 비활성화된 경우 예외가 발생하는지 테스트합니다.
+
+    Args:
+        test_client (TestClient): FastAPI 테스트 클라이언트
+        test_db: 테스트용 DB 세션 fixture
+
+    Returns:
+        None
+    """
     # 사용자의 구독을 비활성화
     db = test_db
     db.query(UserCategory).filter(UserCategory.user_id == "user123").update({"is_active": False})
@@ -124,6 +194,15 @@ def test_recruit_recommendation_no_subscriptions(test_client: TestClient, test_d
 
 # ✅ 채용 공고가 없는 경우 테스트
 def test_recruit_recommendation_no_jobs(test_client: TestClient, test_db):
+    """구독 중인 카테고리에 해당하는 채용 공고가 없을 경우 예외가 발생하는지 테스트합니다.
+
+    Args:
+        test_client (TestClient): FastAPI 테스트 클라이언트
+        test_db: 테스트용 DB 세션 fixture
+
+    Returns:
+        None
+    """    
     # 채용공고 전체 삭제
     db = test_db
     db.query(Employee).delete()

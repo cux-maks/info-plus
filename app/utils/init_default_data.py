@@ -42,7 +42,7 @@ def add_default_categories(db):
 
 
 def add_default_employees(db):
-    """기본 Employee(채용 공고) 데이터를 추가합니다."""
+    """기본 Employee(채용 공고) 데이터를 추가합니다. Category가 선행되어 있어야 함."""
     employees = [
         Employee(
             recruit_id="1",
