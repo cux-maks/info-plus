@@ -4,11 +4,11 @@
 사용자의 구독 정보를 바탕으로 관련된 채용 공고를 필터링하여 반환합니다.
 """
 
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from typing import List
 
-from app.models import Users, UserCategory, Category, Employee
+from app.models import Employee, UserCategory, Users
 from app.utils.db_manager import db_manager
 
 router = APIRouter()

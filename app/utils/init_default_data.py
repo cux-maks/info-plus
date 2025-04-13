@@ -4,10 +4,9 @@
 
 import datetime
 
-from sqlalchemy.exc import IntegrityError
-from app.models.feature import Feature
 from app.models.category import Category
 from app.models.employee import Employee
+from app.models.feature import Feature
 
 
 def add_default_features(db):

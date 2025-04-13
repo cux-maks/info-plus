@@ -12,8 +12,8 @@ FastAPI를 사용하여 RESTful API 엔드포인트를 제공합니다.
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers.user import router as user_router
 from app.routers.employee import router as employee_router
+from app.routers.user import router as user_router
 
 app = FastAPI(
     title="KakaoTalk Chatbot API",

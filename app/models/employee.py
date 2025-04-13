@@ -4,7 +4,7 @@
 사용자 맞춤 추천, 공고 목록 제공 등에 사용됩니다.
 """
 
-from sqlalchemy import Column, String, Integer, Date, ForeignKey, TIMESTAMP, func
+from sqlalchemy import TIMESTAMP, Column, Date, ForeignKey, Integer, String, func
 from sqlalchemy.orm import relationship
 
 from app.models.base import Base

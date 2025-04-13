@@ -10,14 +10,16 @@
     - 카테고리에 해당하는 채용 공고가 없을 경우 처리
 """
 
-import pytest, datetime
+import datetime
+
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import text
 
 from app.main import app
-from app.models import Base, Users, Feature, Category, UserCategory, Employee
+from app.models import Base, Category, Employee, Feature, UserCategory, Users
 from app.utils.db_manager import db_manager
 
 # 테스트용 SQLite 파일 DB (세션 유지)
@@ -32,7 +34,7 @@ def setup_database():
 
     Returns:
         None
-    """    
+    """
     with engine.connect() as conn:
         conn.execute(text("PRAGMA foreign_keys = ON;"))  # 외래 키 활성화
         Base.metadata.drop_all(bind=conn)  # 기존 테이블 삭제
@@ -202,7 +204,7 @@ def test_recruit_recommendation_no_jobs(test_client: TestClient, test_db):
 
     Returns:
         None
-    """    
+    """
     # 채용공고 전체 삭제
     db = test_db
     db.query(Employee).delete()

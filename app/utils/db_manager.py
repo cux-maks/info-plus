@@ -12,11 +12,10 @@ from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 from app.models.base import Base
-
-from app.utils.init_default_data import ( 
-    add_default_features,
+from app.utils.init_default_data import (
     add_default_categories,
     add_default_employees,
+    add_default_features,
 )
 
 load_dotenv()
