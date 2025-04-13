@@ -14,6 +14,7 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from app.models.base import Base
 from app.models.category import Category
 from app.models.feature import Feature
+from app.models.employee import Employee
 
 load_dotenv()
 
