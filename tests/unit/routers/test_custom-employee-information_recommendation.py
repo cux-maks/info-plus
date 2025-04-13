@@ -1,4 +1,4 @@
-import pytest
+import pytest, datetime
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -53,8 +53,8 @@ def test_db(setup_database):
         category_id=category.category_id,
         title="AI 연구원",
         institution="OpenAI",
-        start_date="20250401",
-        end_date="20250430",
+        start_date=datetime.date(2025, 4, 1),
+        end_date=datetime.date(2025, 4, 30),
         recrut_se="R2030", # 신입 + 경력
         hire_type_lst="R1040", # 비정규직
         ncs_cd_lst="R600006", # 보건, 의료
@@ -66,8 +66,8 @@ def test_db(setup_database):
         category_id=category.category_id,
         title="AI 엔지니어",
         institution="Naver",
-        start_date="20250405",
-        end_date="20250505",
+        start_date=datetime.date(2025, 4, 5),
+        end_date=datetime.date(2025, 5, 5),
         recrut_se="R2010", # 신입
         hire_type_lst="R1010", # 정규직
         ncs_cd_lst="R600002", # 경영, 회계, 사무

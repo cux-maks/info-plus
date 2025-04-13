@@ -2,6 +2,8 @@
 이 모듈은 Feature, Category, Employee 테이블에 기본 데이터를 삽입하는 함수들을 포함합니다.
 """
 
+import datetime
+
 from sqlalchemy.exc import IntegrityError
 from app.models.feature import Feature
 from app.models.category import Category
@@ -47,8 +49,8 @@ def add_default_employees(db):
             category_id=1,
             title="2025년도 전문계약직(야간약사) 모집공고",
             institution="국민건강보험공단 일산병원",
-            start_date="20250109",
-            end_date="20250123",
+            start_date=datetime.date(2025, 1, 9),
+            end_date=datetime.date(2025, 1, 23),
             recrut_se="R2030", # 신입 + 경력
             hire_type_lst="R1040", # 비정규직
             ncs_cd_lst="R600006", # 보건.의료
@@ -60,8 +62,8 @@ def add_default_employees(db):
             category_id=2,
             title="한전MCS(주) 2025년 상반기 신규채용",
             institution="한전MCS(주)",
-            start_date="20250109",
-            end_date="20250123",
+            start_date=datetime.date(2025, 1, 9),
+            end_date=datetime.date(2025, 1, 23),
             recrut_se="R2010", # 신입
             hire_type_lst="R1010", # 정규직
             ncs_cd_lst="R600015, R600019", # 기계,전기.전자
@@ -73,8 +75,8 @@ def add_default_employees(db):
             category_id=1,
             title="한국보건사회연구원 행정인턴(장애인 제한경쟁) 채용 공고",
             institution="한국보건사회연구원",
-            start_date="20250109",
-            end_date="20250123",
+            start_date=datetime.date(2025, 1, 9),
+            end_date=datetime.date(2025, 1, 23),
             recrut_se="R2010", # 신입
             hire_type_lst="R1060", # 청년인턴(체험형)
             ncs_cd_lst="R600002", # 경영.회계.사무
@@ -86,8 +88,8 @@ def add_default_employees(db):
             category_id=3,
             title="채용형 인턴 채용공고(주택관리공단 충북지사)",
             institution="주택관리공단(주)",
-            start_date="20250109",
-            end_date="20250116",
+            start_date=datetime.date(2025, 1, 9),
+            end_date=datetime.date(2025, 1, 16),
             recrut_se="R2030", # 신입 + 경력
             hire_type_lst="R1070", # 청년인턴(채용형)
             ncs_cd_lst="R600014,R600015,R600019,R600020,R600023", # 건설,기계,전기.전자,정보통신,환경.에너지.안전
@@ -99,8 +101,8 @@ def add_default_employees(db):
             category_id=2,
             title="한국형사·법무정책연구원 2025년도 제1차 채용공고[위촉조사연구원(육아휴직대체)]",
             institution="한국형사·법무정책연구원",
-            start_date="20250109",
-            end_date="20250124",
+            start_date=datetime.date(2025, 1, 9),
+            end_date=datetime.date(2025, 1, 24),
             recrut_se="R2030", # 신입 + 경력
             hire_type_lst="R1040", # 비정규직
             ncs_cd_lst="R600025", # 연구
