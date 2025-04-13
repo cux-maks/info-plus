@@ -35,22 +35,19 @@ def test_db(setup_database):
     db.refresh(user)
     db.refresh(feature)
 
-    category = Category(feature_id=feature.feature_id, category_name="AI")
+    category = Category(feature_id=1, category_name="AI")
     db.add(category)
     db.commit()
     db.refresh(category)
 
-    user_category = UserCategory(
-        user_id=user.user_id,
-        category_id=category.category_id,
-        is_active=True
-    )
+    user_category = UserCategory(user_id="user123", category_id=1, is_active=True)
     db.add(user_category)
     db.commit()
+    db.refresh(user_category)
 
     job1 = Employee(
         recruit_id="rec1",
-        category_id=category.category_id,
+        category_id=1,
         title="AI 연구원",
         institution="OpenAI",
         start_date=datetime.date(2025, 4, 1),
@@ -63,7 +60,7 @@ def test_db(setup_database):
     )
     job2 = Employee(
         recruit_id="rec2",
-        category_id=category.category_id,
+        category_id=1,
         title="AI 엔지니어",
         institution="Naver",
         start_date=datetime.date(2025, 4, 5),
@@ -100,7 +97,7 @@ def test_client():
 
 # ✅ 추천 성공 테스트
 def test_recruit_recommendation_success(test_client: TestClient, test_db):
-    response = test_client.get("/custom-employee-information/recommendation", params={"user_id": "user123", "limit": 2})
+    response = test_client.get("/employee/custom-employee-information/recommendation", params={"user_id": "user123", "limit": 2})
     assert response.status_code == 200
 
     data = response.json()
@@ -110,7 +107,7 @@ def test_recruit_recommendation_success(test_client: TestClient, test_db):
 
 # ✅ 존재하지 않는 사용자 테스트
 def test_recruit_recommendation_user_not_found(test_client: TestClient, test_db):
-    response = test_client.get("/custom-employee-information/recommendation", params={"user_id": "ghost"})
+    response = test_client.get("/employee/custom-employee-information/recommendation", params={"user_id": "ghost"})
     assert response.status_code == 404
     assert response.json() == {"detail": "User not found"}
 
@@ -121,7 +118,7 @@ def test_recruit_recommendation_no_subscriptions(test_client: TestClient, test_d
     db.query(UserCategory).filter(UserCategory.user_id == "user123").update({"is_active": False})
     db.commit()
 
-    response = test_client.get("/custom-employee-information/recommendation", params={"user_id": "user123"})
+    response = test_client.get("/employee/custom-employee-information/recommendation", params={"user_id": "user123"})
     assert response.status_code == 404
     assert response.json() == {"detail": "No active category subscriptions"}
 
@@ -132,6 +129,6 @@ def test_recruit_recommendation_no_jobs(test_client: TestClient, test_db):
     db.query(Employee).delete()
     db.commit()
 
-    response = test_client.get("/custom-employee-information/recommendation", params={"user_id": "user123"})
+    response = test_client.get("/employee/custom-employee-information/recommendation", params={"user_id": "user123"})
     assert response.status_code == 404
     assert response.json() == {"detail": "No recruitment posts found for user's interests"}
