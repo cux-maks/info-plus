@@ -43,69 +43,69 @@ def add_default_employees(db):
     """기본 Employee(채용 공고) 데이터를 추가합니다."""
     employees = [
         Employee(
-            recruit_id="RECR20250401",
+            recruit_id="1",
             category_id=1,
-            title="데이터 분석가 채용",
-            institution="한국정보화진흥원",
-            start_date="2025-04-01",
-            end_date="2025-04-15",
-            recrut_se="경력",
-            hire_type_lst="정규직",
-            ncs_cd_lst="20010101",
-            detail_url="https://opendata.alio.go.kr/recruit1",
-            recrut_pblnt_sn=101001,
+            title="2025년도 전문계약직(야간약사) 모집공고",
+            institution="국민건강보험공단 일산병원",
+            start_date="20250109",
+            end_date="20250123",
+            recrut_se="R2030", # 신입 + 경력
+            hire_type_lst="R1040", # 비정규직
+            ncs_cd_lst="R600006", # 보건.의료
+            detail_url="https://nhimc.recruiter.co.kr/appsite/company/index",
+            recrut_pblnt_sn=280272,
         ),
         Employee(
-            recruit_id="RECR20250402",
+            recruit_id="2",
             category_id=2,
-            title="프론트엔드 개발자 모집",
-            institution="공공데이터진흥원",
-            start_date="2025-04-03",
-            end_date="2025-04-17",
-            recrut_se="신입",
-            hire_type_lst="계약직",
-            ncs_cd_lst="20010102",
-            detail_url="https://opendata.alio.go.kr/recruit2",
-            recrut_pblnt_sn=101002,
+            title="한전MCS(주) 2025년 상반기 신규채용",
+            institution="한전MCS(주)",
+            start_date="20250109",
+            end_date="20250123",
+            recrut_se="R2010", # 신입
+            hire_type_lst="R1010", # 정규직
+            ncs_cd_lst="R600015, R600019", # 기계,전기.전자
+            detail_url="https://recruit.incruit.com/kepcomcs",
+            recrut_pblnt_sn=280269,
         ),
         Employee(
-            recruit_id="RECR20250403",
+            recruit_id="3",
             category_id=1,
-            title="AI 모델링 전문가",
-            institution="국가과학기술연구회",
-            start_date="2025-04-05",
-            end_date="2025-04-20",
-            recrut_se="경력",
-            hire_type_lst="정규직",
-            ncs_cd_lst="20010103",
-            detail_url="https://opendata.alio.go.kr/recruit3",
-            recrut_pblnt_sn=101003,
+            title="한국보건사회연구원 행정인턴(장애인 제한경쟁) 채용 공고",
+            institution="한국보건사회연구원",
+            start_date="20250109",
+            end_date="20250123",
+            recrut_se="R2010", # 신입
+            hire_type_lst="R1060", # 청년인턴(체험형)
+            ncs_cd_lst="R600002", # 경영.회계.사무
+            detail_url="https://kihasa.recruiter.co.kr/appsite/company/index",
+            recrut_pblnt_sn=280268,
         ),
         Employee(
-            recruit_id="RECR20250404",
+            recruit_id="4",
             category_id=3,
-            title="백엔드 엔지니어 채용",
-            institution="한국전자통신연구원",
-            start_date="2025-04-07",
-            end_date="2025-04-21",
-            recrut_se="경력",
-            hire_type_lst="정규직",
-            ncs_cd_lst="20010104",
+            title="채용형 인턴 채용공고(주택관리공단 충북지사)",
+            institution="주택관리공단(주)",
+            start_date="20250109",
+            end_date="20250116",
+            recrut_se="R2030", # 신입 + 경력
+            hire_type_lst="R1070", # 청년인턴(채용형)
+            ncs_cd_lst="R600014,R600015,R600019,R600020,R600023", # 건설,기계,전기.전자,정보통신,환경.에너지.안전
             detail_url="https://opendata.alio.go.kr/recruit4",
-            recrut_pblnt_sn=101004,
+            recrut_pblnt_sn=280267,
         ),
         Employee(
             recruit_id="RECR20250405",
             category_id=2,
-            title="UX/UI 디자이너 채용",
-            institution="한국문화정보원",
-            start_date="2025-04-08",
-            end_date="2025-04-22",
-            recrut_se="신입",
-            hire_type_lst="계약직",
-            ncs_cd_lst="20010105",
+            title="한국형사·법무정책연구원 2025년도 제1차 채용공고[위촉조사연구원(육아휴직대체)]",
+            institution="한국형사·법무정책연구원",
+            start_date="20250109",
+            end_date="20250124",
+            recrut_se="R2030", # 신입 + 경력
+            hire_type_lst="R1040", # 비정규직
+            ncs_cd_lst="R600025", # 연구
             detail_url="https://opendata.alio.go.kr/recruit5",
-            recrut_pblnt_sn=101005,
+            recrut_pblnt_sn=280266,
         )
     ]
     for emp in employees:
