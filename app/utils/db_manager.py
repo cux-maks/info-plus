@@ -16,6 +16,12 @@ from app.models.category import Category
 from app.models.feature import Feature
 from app.models.employee import Employee
 
+from utils.init_default_data import ( 
+    add_default_features,
+    add_default_categories,
+    add_default_employees,
+)
+
 load_dotenv()
 
 class DBManager:
@@ -73,30 +79,11 @@ class DBManager:
         """
         db = next(self.get_db())
         try:
-            # Feature 기본 데이터
-            features = [
-                Feature(feature_type="news"),
-                Feature(feature_type="employee")
-            ]
-            for feature in features:
-                db.add(feature)
-
-            # Category 기본 데이터
-            categories = [
-                Category(category_name="IT/개발", feature=features[0]),
-                Category(category_name="마케팅", feature=features[0]),
-                Category(category_name="디자인", feature=features[0]),
-                Category(category_name="경영/기획", feature=features[0]),
-                Category(category_name="영업/제휴", feature=features[0]),
-                Category(category_name="인사/채용", feature=features[1]),
-                Category(category_name="재무/회계", feature=features[1]),
-                Category(category_name="법무/법률", feature=features[1]),
-                Category(category_name="생산/제조", feature=features[1]),
-                Category(category_name="물류/유통", feature=features[1])
-            ]
-            for category in categories:
-                db.add(category)
-
+            add_default_features(db)
+            db.commit()
+            add_default_categories(db)
+            db.commit()
+            add_default_employees(db)
             db.commit()
             print("✨ 기본 데이터가 성공적으로 추가되었습니다.")
         except IntegrityError:
