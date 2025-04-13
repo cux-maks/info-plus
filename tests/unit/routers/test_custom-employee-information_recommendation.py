@@ -151,7 +151,8 @@ def test_recruit_recommendation_success(test_client: TestClient, test_db):
     Returns:
         None
     """
-    response = test_client.get("/employee/custom-employee-information/recommendation", params={"user_id": "user123", "limit": 2})
+    response = test_client.get("/employee/custom-employee-information/recommendation",
+    params={"user_id": "user123", "limit": 2})
     assert response.status_code == 200
 
     data = response.json()

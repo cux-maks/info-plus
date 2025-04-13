@@ -45,7 +45,7 @@ def get_recruit_recommendations(
     # ✅ 2. 사용자 관심 카테고리 조회 (활성화된 것만)
     user_categories = (
         db.query(UserCategory.category_id)
-        .filter(UserCategory.user_id == user_id, UserCategory.is_active == True)
+        .filter(UserCategory.user_id == user_id, UserCategory.is_active.is_(True))
         .all()
     )
     if not user_categories: # 만약 활성화된 카테고리가 없다면
