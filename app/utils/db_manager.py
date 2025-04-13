@@ -12,11 +12,8 @@ from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 from app.models.base import Base
-from app.models.category import Category
-from app.models.feature import Feature
-from app.models.employee import Employee
 
-from utils.init_default_data import ( 
+from app.utils.init_default_data import ( 
     add_default_features,
     add_default_categories,
     add_default_employees,

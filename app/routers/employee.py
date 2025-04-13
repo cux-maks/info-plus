@@ -48,7 +48,7 @@ def get_recruit_recommendations(
         .filter(UserCategory.user_id == user_id, UserCategory.is_active == True)
         .all()
     )
-    if not user_categories:
+    if not user_categories: # 만약 활성화된 카테고리가 없다면
         raise HTTPException(status_code=404, detail="No active category subscriptions")
 
     category_ids = [uc.category_id for uc in user_categories]
@@ -60,7 +60,7 @@ def get_recruit_recommendations(
         .limit(limit)
         .all()
     )
-    if not jobs:
+    if not jobs: # 만약 해당 카테고리의 채용 공고를 조회하지 못했다면
         raise HTTPException(status_code=404, detail="No recruitment posts found for user's interests")
 
     return jobs
