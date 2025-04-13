@@ -38,8 +38,8 @@ class Employee(Base):
     category_id = Column(Integer, ForeignKey("category.category_id"), nullable=False)  # 외래 키
     title = Column(String(255), nullable=False)  # 채용 제목
     institution = Column(String(100), nullable=False)  # 기관명
-    start_date = Column(Date, nullable=False)
-    end_date = Column(Date, nullable=False)
+    start_date = Column(String(100), nullable=False) # 공고 시작일
+    end_date = Column(String(100), nullable=False) # 공고 마감일
     recrut_se = Column(String(100), nullable=True)  # 신입/경력
     hire_type_lst = Column(String(100), nullable=True)  # 정규직/계약직 등
     ncs_cd_lst = Column(String(100), nullable=True)  # 직무 코드

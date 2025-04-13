@@ -35,3 +35,4 @@ class Category(Base):
     # UserCategory 모델과 관계를 설정
     user_category = relationship("UserCategory", back_populates="category")
     feature = relationship("Feature", back_populates="category")  # Feature 모델과 관계 설정
+    employee = relationship("Employee", back_populates="category")  # empluyee 모델과 관계 설정
