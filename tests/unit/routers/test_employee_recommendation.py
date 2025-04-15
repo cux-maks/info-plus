@@ -1,6 +1,6 @@
 """사용자 맞춤 채용 공고 추천 API 테스트 모듈.
 
-이 모듈은 /employee/custom-employee-information/recommendation 엔드포인트의
+이 모듈은 /employee/recommend 엔드포인트의
 기능을 테스트합니다.
 
 주요 테스트 항목:
@@ -151,7 +151,7 @@ def test_recruit_recommendation_success(test_client: TestClient, test_db):
     Returns:
         None
     """
-    response = test_client.get("/employee/recommendation",
+    response = test_client.get("/employee/recommend",
     params={"user_id": "user123", "limit": 2})
     assert response.status_code == 200
 
@@ -171,7 +171,7 @@ def test_recruit_recommendation_user_not_found(test_client: TestClient, test_db)
     Returns:
         None
     """
-    response = test_client.get("/employee/recommendation", params={"user_id": "ghost"})
+    response = test_client.get("/employee/recommend", params={"user_id": "ghost"})
     assert response.status_code == 404
     assert response.json() == {"detail": "User not found"}
 
@@ -191,7 +191,7 @@ def test_recruit_recommendation_no_subscriptions(test_client: TestClient, test_d
     db.query(UserCategory).filter(UserCategory.user_id == "user123").update({"is_active": False})
     db.commit()
 
-    response = test_client.get("/employee/recommendation", params={"user_id": "user123"})
+    response = test_client.get("/employee/recommend", params={"user_id": "user123"})
     assert response.status_code == 404
     assert response.json() == {"detail": "No active category subscriptions"}
 
@@ -211,6 +211,6 @@ def test_recruit_recommendation_no_jobs(test_client: TestClient, test_db):
     db.query(Employee).delete()
     db.commit()
 
-    response = test_client.get("/employee/recommendation", params={"user_id": "user123"})
+    response = test_client.get("/employee/recommend", params={"user_id": "user123"})
     assert response.status_code == 404
     assert response.json() == {"detail": "No recruitment posts found for user's interests"}
