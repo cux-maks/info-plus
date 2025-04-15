@@ -227,4 +227,5 @@ def test_recruit_recommendation_limit_less_than_requested(test_client: TestClien
     assert "results" in data
     assert isinstance(data["results"], list)
     assert len(data["results"]) == 2
-    assert data["message"] == "요청한 limit 10개 중 2개의 채용공고만 조회되었습니다."
+    assert data["message"] == "채용공고 데이터가 부족하여, 요청하신 채용공고 10개 중 2개의 채용공고만 조회되었습니다."
+
