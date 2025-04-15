@@ -70,7 +70,10 @@ def get_recruit_recommendations(
     # ✅ 4. limit보다 적게 조회된 경우 메시지 추가
     message = None
     if len(jobs) < limit:
-        message = f"채용공고 데이터가 부족하여, 요청하신 채용공고 {limit}개 중 {len(jobs)}개의 채용공고만 조회되었습니다."
+      message = (
+          f"채용공고 데이터가 부족하여, 요청하신 채용공고 {limit}개 중 "
+          f"{len(jobs)}개의 채용공고만 조회되었습니다."
+      )
 
     return {
         "results": jobs,
