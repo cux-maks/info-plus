@@ -57,6 +57,10 @@ def get_recruit_recommendations(
     jobs = (
         db.query(Employee)
         .filter(Employee.category_id.in_(category_ids))
+        .order_by(
+            Employee.start_date.desc(),   # 최신 시작일 우선
+            Employee.end_date.asc()       # 마감일이 빠를수록 우선
+        )
         .limit(limit)
         .all()
     )
