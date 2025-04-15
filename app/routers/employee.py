@@ -15,7 +15,7 @@ router = APIRouter()
 db_dependency = Depends(db_manager.get_db)  # 전역 변수로 설정
 
 
-@router.get("/custom-employee-information/recommendation")
+@router.get("/recommend")
 def get_recruit_recommendations(
     user_id: str = Query(..., description="추천을 받을 사용자 ID"),
     limit: int = Query(10, ge=1, le=100, description="추천 받을 채용 공고 수 (최대 100개, 기본값: 10)"),
