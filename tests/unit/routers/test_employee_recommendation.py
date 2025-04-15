@@ -156,9 +156,11 @@ def test_recruit_recommendation_success(test_client: TestClient, test_db):
     assert response.status_code == 200
 
     data = response.json()
-    assert isinstance(data, list)
-    assert len(data) == 2
-    assert data[0]["institution"] in ["OpenAI", "Naver"]
+    assert isinstance(data, dict)
+    assert "results" in data
+    assert isinstance(data["results"], list)
+    assert len(data["results"]) == 2
+    assert data["results"][0]["institution"] in ["OpenAI", "Naver"]
 
 # ✅ 존재하지 않는 사용자 테스트
 def test_recruit_recommendation_user_not_found(test_client: TestClient, test_db):
