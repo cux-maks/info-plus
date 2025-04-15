@@ -64,7 +64,15 @@ def get_recruit_recommendations(
         .limit(limit)
         .all()
     )
-    if not jobs: # 만약 해당 카테고리의 채용 공고를 조회하지 못했다면
+    if not jobs:
         raise HTTPException(status_code=404, detail="No recruitment posts found for user's interests")
 
-    return jobs
+    # ✅ 4. limit보다 적게 조회된 경우 메시지 추가
+    message = None
+    if len(jobs) < limit:
+        message = f"요청한 limit {limit}개 중 {len(jobs)}개의 채용공고만 조회되었습니다."
+
+    return {
+        "results": jobs,
+        "message": message
+    }

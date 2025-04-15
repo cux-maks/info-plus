@@ -214,3 +214,15 @@ def test_recruit_recommendation_no_jobs(test_client: TestClient, test_db):
     response = test_client.get("/employee/recommend", params={"user_id": "user123"})
     assert response.status_code == 404
     assert response.json() == {"detail": "No recruitment posts found for user's interests"}
+
+# ✅ limit보다 적은 결과가 반환되는 경우 테스트
+def test_recruit_recommendation_limit_less_than_requested(test_client: TestClient, test_db):
+    """limit 값보다 적은 채용 공고가 존재할 때 메시지가 포함되는지 테스트합니다."""
+    response = test_client.get("/employee/recommend", params={"user_id": "user123", "limit": 10})
+    assert response.status_code == 200
+
+    data = response.json()
+    assert "results" in data
+    assert isinstance(data["results"], list)
+    assert len(data["results"]) == 2
+    assert data["message"] == "요청한 limit 10개 중 2개의 채용공고만 조회되었습니다."
