@@ -12,6 +12,7 @@ FastAPI를 사용하여 RESTful API 엔드포인트를 제공합니다.
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.routers.employee import router as employee_router
 from app.routers.user import router as user_router
 
 app = FastAPI(
@@ -30,6 +31,7 @@ app.add_middleware(
 )
 
 app.include_router(user_router, prefix="/user")
+app.include_router(employee_router, prefix="/employee")
 
 @app.get("/")
 async def root():
