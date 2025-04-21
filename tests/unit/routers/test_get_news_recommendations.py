@@ -99,38 +99,32 @@ def test_db(setup_database):
         News(
             news_id="news1",
             category_id=1,
-            title="AI 기술의 미래",
-            content="인공지능 기술이 미래를 바꾸고 있습니다...",
-            url="https://example.com/ai-future",
-            published_at=datetime.datetime(2024, 3, 1),
-            source="TechNews"
+            title="AI 뉴스 1",
+            contents="AI 관련 뉴스 내용 1",
+            source="AI News",
+            publish_date=datetime.datetime.now() - datetime.timedelta(days=1),
+            category="AI",
+            url="http://example.com/ai1"
         ),
         News(
             news_id="news2",
-            category_id=1,
-            title="머신러닝의 새로운 발전",
-            content="머신러닝 분야에서 획기적인 발전이 있었습니다...",
-            url="https://example.com/ml-advance",
-            published_at=datetime.datetime(2024, 3, 2),
-            source="AI Weekly"
+            category_id=2,
+            title="Blockchain 뉴스 1",
+            contents="Blockchain 관련 뉴스 내용 1",
+            source="Blockchain News",
+            publish_date=datetime.datetime.now() - datetime.timedelta(days=2),
+            category="Blockchain",
+            url="http://example.com/blockchain1"
         ),
         News(
             news_id="news3",
-            category_id=2,
-            title="블록체인 기술 동향",
-            content="블록체인 기술의 최신 동향을 살펴봅니다...",
-            url="https://example.com/blockchain-trend",
-            published_at=datetime.datetime(2024, 3, 3),
-            source="Blockchain Daily"
-        ),
-        News(
-            news_id="news4",
-            category_id=3,
-            title="클라우드 컴퓨팅 혁신",
-            content="클라우드 컴퓨팅 분야의 혁신적인 발전...",
-            url="https://example.com/cloud-innovation",
-            published_at=datetime.datetime(2024, 3, 4),
-            source="Cloud Weekly"
+            category_id=1,
+            title="AI 뉴스 2",
+            contents="AI 관련 뉴스 내용 2",
+            source="AI News",
+            publish_date=datetime.datetime.now() - datetime.timedelta(days=3),
+            category="AI",
+            url="http://example.com/ai2"
         )
     ]
     db.add_all(news_list)
