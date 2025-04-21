@@ -18,6 +18,11 @@ from app.utils.init_default_data import (
     add_default_features,
 )
 
+from app.models.category import Category
+from app.models.feature import Feature
+from app.models.users import Users
+
+
 load_dotenv()
 
 class DBManager:
