@@ -97,7 +97,6 @@ def test_db(setup_database):
     # 뉴스 데이터 추가 (다양한 날짜와 카테고리)
     news_list = [
         News(
-            news_id="news1",
             category_id=1,
             title="AI 뉴스 1",
             contents="AI 관련 뉴스 내용 1",
@@ -107,7 +106,6 @@ def test_db(setup_database):
             url="http://example.com/ai1"
         ),
         News(
-            news_id="news2",
             category_id=2,
             title="Blockchain 뉴스 1",
             contents="Blockchain 관련 뉴스 내용 1",
@@ -117,7 +115,6 @@ def test_db(setup_database):
             url="http://example.com/blockchain1"
         ),
         News(
-            news_id="news3",
             category_id=1,
             title="AI 뉴스 2",
             contents="AI 관련 뉴스 내용 2",
