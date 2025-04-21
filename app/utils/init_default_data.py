@@ -1,3 +1,4 @@
+# ruff: noqa
 """기본 데이터를 삽입하는 유틸리티 모듈.
 이 모듈은 Feature, Category, Employee 테이블에 기본 데이터를 삽입하는 함수들을 포함합니다.
 """
@@ -8,8 +9,7 @@ from app.models.category import Category
 from app.models.employee import Employee
 from app.models.feature import Feature
 from app.models.news import News
-from app.models.user import User
-from app.utils.auth import get_password_hash
+from app.models.users import Users
 
 
 def add_default_features(db):
@@ -48,7 +48,7 @@ def add_default_employees(db):
     employees = [
         Employee(
             recruit_id="1",
-            category_id=1,
+            category_id=6,  # 인사/채용
             title="2025년도 전문계약직(야간약사) 모집공고",
             institution="국민건강보험공단 일산병원",
             start_date=datetime.date(2025, 1, 9),
@@ -61,7 +61,7 @@ def add_default_employees(db):
         ),
         Employee(
             recruit_id="2",
-            category_id=2,
+            category_id=6,  # 인사/채용
             title="한전MCS(주) 2025년 상반기 신규채용",
             institution="한전MCS(주)",
             start_date=datetime.date(2025, 1, 9),
@@ -74,7 +74,7 @@ def add_default_employees(db):
         ),
         Employee(
             recruit_id="3",
-            category_id=1,
+            category_id=6,  # 인사/채용
             title="한국보건사회연구원 행정인턴(장애인 제한경쟁) 채용 공고",
             institution="한국보건사회연구원",
             start_date=datetime.date(2025, 1, 9),
@@ -87,7 +87,7 @@ def add_default_employees(db):
         ),
         Employee(
             recruit_id="4",
-            category_id=3,
+            category_id=6,  # 인사/채용
             title="채용형 인턴 채용공고(주택관리공단 충북지사)",
             institution="주택관리공단(주)",
             start_date=datetime.date(2025, 1, 9),
@@ -100,7 +100,7 @@ def add_default_employees(db):
         ),
         Employee(
             recruit_id="RECR20250405",
-            category_id=2,
+            category_id=8,  # 법무/법률
             title="한국형사·법무정책연구원 2025년도 제1차 채용공고[위촉조사연구원(육아휴직대체)]",
             institution="한국형사·법무정책연구원",
             start_date=datetime.date(2025, 1, 9),
@@ -146,15 +146,6 @@ def add_default_news(db):
             category="디자인",
             url="https://n.news.naver.com/article/138/0002160000"
         ),
-        News(
-            category_id=2,  # 마케팅
-            title="신분증 제시 거부하며 경찰 밀친 40대, 항소심서 '무죄'로 뒤집혀",
-            contents="폭행 신고를 받고 출동한 경찰이 신분증 제시를 요구하자 가슴을 밀치며 거부한 40대가 2심에서 무죄를 선고받았다. 2일 뉴시스에 따르면 울산지법 형사1-3부(부장판사 이봉수)는 공무집행방해 혐의로 기소된 A씨에 대한 항소심에서 벌금형을 선고한 원심을 깨고 무죄를 선고했다. 2021년 6월 울산 동구의 한 상가 인근에서 '아는 오빠한테 맞았다'는 B씨의 신고를 받고 출동한 경찰관 C씨가 신분증 제시를 요구하자, A씨는 이를 거부하며 욕설과 함께 가슴 부위를 때리고 밀치는 등 공무집행을 방해한 혐의로 재판에 넘겨졌다. 1심 재판부는 '경찰관이 다가서며 몰아붙이는 상황에서 이에 대응해 폭력을 가한 사실은 인정된다'면서도 '신분 확인을 요구하는 경찰에게 욕설하고 폭행한 행위는 정당하지 않다'며 벌금 500만원을 선고했다. A씨는 1심 판결에 불복해 항소했다. 그는 법정에서 '가슴을 폭행한 사실이 없고, B씨가 신고를 철회했는데도 경찰관 C씨가 계속해서 강압적으로 신분증 제시를 요구해 위법한 직무 집행에 대항해 실랑이를 벌였다'며 무죄를 주장했다. 2심 재판부는 A씨 주장을 받아들였다. 현장 폐쇄회로(CC)TV 상에 A씨가 경찰관 C씨의 가슴 부위를 때리는 모습이 확인되지 않고, B씨가 신고를 철회해 사건 처리가 완료된 만큼 계속된 신분증 제시 요구는 정당한 공무집행으로 볼 수 없다고 본 것이다.",
-            source="머니투데이",
-            publish_date=datetime.datetime(2023, 8, 2, 7, 40),
-            category="마케팅",
-            url="https://n.news.naver.com/article/008/0004920000"
-        )
     ]
     for news in news_items:
         db.add(news)
@@ -162,11 +153,9 @@ def add_default_news(db):
 
 def add_default_user(db):
     """기본 사용자 데이터를 추가합니다."""
-    admin_user = User(
-        username="admin",
-        email="admin@example.com",
-        hashed_password=get_password_hash("admin"),
-        is_active=True,
-        is_superuser=True
+    admin_user = Users(
+        user_id="admin",
+        user_name="admin",
+        created_at=datetime.datetime.now()
     )
     db.add(admin_user)

@@ -16,12 +16,9 @@ from app.utils.init_default_data import (
     add_default_categories,
     add_default_employees,
     add_default_features,
+    add_default_news,
+    add_default_user,
 )
-
-from app.models.category import Category
-from app.models.feature import Feature
-from app.models.users import Users
-
 
 load_dotenv()
 
@@ -80,11 +77,15 @@ class DBManager:
         """
         db = next(self.get_db())
         try:
+            add_default_user(db)
+            db.commit()
             add_default_features(db)
             db.commit()
             add_default_categories(db)
             db.commit()
             add_default_employees(db)
+            db.commit()
+            add_default_news(db)
             db.commit()
             print("✨ 기본 데이터가 성공적으로 추가되었습니다.")
         except IntegrityError:
