@@ -8,6 +8,8 @@ from app.models.category import Category
 from app.models.employee import Employee
 from app.models.feature import Feature
 from app.models.news import News
+from app.models.user import User
+from app.utils.auth import get_password_hash
 
 
 def add_default_features(db):
@@ -146,15 +148,6 @@ def add_default_news(db):
         ),
         News(
             category_id=2,  # 마케팅
-            title="인플루언서 마케팅 시장 2024년 15조원 돌파...AI 기반 타겟팅 강화",
-            contents="인플루언서 마케팅 시장이 2024년 15조원을 돌파할 것으로 전망된다. 최근 기업들이 AI를 활용한 인플루언서 타겟팅에 적극적으로 나서고 있다. 특히 소셜미디어 플랫폼에서의 AI 기반 콘텐츠 최적화와 인플루언서 영향력 분석이 마케팅 효과를 크게 향상시키고 있다. 시장조사업체 인사이트에 따르면, 2023년 국내 인플루언서 마케팅 시장 규모는 약 12조원으로 추정되며, 이는 전년 대비 25% 증가한 수치다. 특히 AI를 활용한 인플루언서 타겟팅과 콘텐츠 최적화 기술이 시장 성장을 주도하고 있다. 기업들은 AI를 통해 인플루언서의 영향력과 타겟 오디언스를 정밀하게 분석하고, 이를 바탕으로 마케팅 효과를 극대화하고 있다.",
-            source="머니투데이",
-            publish_date=datetime.datetime(2024, 1, 15, 16, 30),
-            category="마케팅",
-            url="https://n.news.naver.com/article/008/0004920000"
-        ),
-        News(
-            category_id=2,  # 마케팅
             title="신분증 제시 거부하며 경찰 밀친 40대, 항소심서 '무죄'로 뒤집혀",
             contents="폭행 신고를 받고 출동한 경찰이 신분증 제시를 요구하자 가슴을 밀치며 거부한 40대가 2심에서 무죄를 선고받았다. 2일 뉴시스에 따르면 울산지법 형사1-3부(부장판사 이봉수)는 공무집행방해 혐의로 기소된 A씨에 대한 항소심에서 벌금형을 선고한 원심을 깨고 무죄를 선고했다. 2021년 6월 울산 동구의 한 상가 인근에서 '아는 오빠한테 맞았다'는 B씨의 신고를 받고 출동한 경찰관 C씨가 신분증 제시를 요구하자, A씨는 이를 거부하며 욕설과 함께 가슴 부위를 때리고 밀치는 등 공무집행을 방해한 혐의로 재판에 넘겨졌다. 1심 재판부는 '경찰관이 다가서며 몰아붙이는 상황에서 이에 대응해 폭력을 가한 사실은 인정된다'면서도 '신분 확인을 요구하는 경찰에게 욕설하고 폭행한 행위는 정당하지 않다'며 벌금 500만원을 선고했다. A씨는 1심 판결에 불복해 항소했다. 그는 법정에서 '가슴을 폭행한 사실이 없고, B씨가 신고를 철회했는데도 경찰관 C씨가 계속해서 강압적으로 신분증 제시를 요구해 위법한 직무 집행에 대항해 실랑이를 벌였다'며 무죄를 주장했다. 2심 재판부는 A씨 주장을 받아들였다. 현장 폐쇄회로(CC)TV 상에 A씨가 경찰관 C씨의 가슴 부위를 때리는 모습이 확인되지 않고, B씨가 신고를 철회해 사건 처리가 완료된 만큼 계속된 신분증 제시 요구는 정당한 공무집행으로 볼 수 없다고 본 것이다.",
             source="머니투데이",
@@ -165,3 +158,15 @@ def add_default_news(db):
     ]
     for news in news_items:
         db.add(news)
+
+
+def add_default_user(db):
+    """기본 사용자 데이터를 추가합니다."""
+    admin_user = User(
+        username="admin",
+        email="admin@example.com",
+        hashed_password=get_password_hash("admin"),
+        is_active=True,
+        is_superuser=True
+    )
+    db.add(admin_user)
