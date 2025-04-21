@@ -193,7 +193,7 @@ def test_news_recommendation_sorting(test_client: TestClient, test_db):
     assert response.status_code == 200
 
     data = response.json()
-    news_dates = [datetime.datetime.fromisoformat(news["publish_date"]) for news in data["results"]]  # published_at을 publish_date로 수정
+    news_dates = [datetime.datetime.fromisoformat(news["publish_date"]) for news in data["results"]]
     assert news_dates == sorted(news_dates, reverse=True)  # 최신순 정렬 확인
 
 # ✅ limit 경계값 테스트
