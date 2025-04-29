@@ -13,9 +13,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers.employee import router as employee_router
+from app.routers.feature import router as feature_router
 from app.routers.news import router as news_router
 from app.routers.user import router as user_router
-from app.routers.feature import router as feature_router
 
 app = FastAPI(
     title="KakaoTalk Chatbot API",

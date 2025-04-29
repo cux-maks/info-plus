@@ -5,8 +5,7 @@
 
 import re
 
-from fastapi import Depends, Query
-from fastapi import HTTPException
+from fastapi import Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.models.users import Users
