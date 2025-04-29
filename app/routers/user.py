@@ -5,12 +5,11 @@
 """
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Path
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.models.category import Category
-from app.models.feature import Feature
 from app.models.user_category import UserCategory
 from app.utils.db_manager import db_manager
 from app.utils.verifier import verify_exists_user
@@ -27,7 +26,7 @@ class SubscriptionRequest(BaseModel):
     user_id: str = Field(..., example="user123")
     category_id: int = Field(..., example=1)
 
-@router.post("/add/favorit")
+@router.post("/subscribe")
 def add_category(request: SubscriptionRequest, db: Session = db_dependency):
     """사용자가 특정 카테고리를 구독하는 엔드포인트입니다.
 
@@ -60,7 +59,7 @@ def add_category(request: SubscriptionRequest, db: Session = db_dependency):
 
     return {"message": "Subscription successful!"}
 
-@router.delete("/delete/favorit")
+@router.delete("/subscribe")
 def delete_category(
     user_id: str = Query(..., description="User ID"),
     category_id: int = Query(..., description="Category ID"),
@@ -111,36 +110,6 @@ def delete_category(
 
     return {"message": "Subscription successfully deactivated."}
 
-
-@router.get(path="/categories/{feature}")
-def get_categories_by_feature(feature: str, db: Session = db_dependency):
-    """특정 기능에 해당하는 카테고리 목록을 조회하는 엔드포인트입니다.
-
-    Args:
-        feature (str): 카테고리를 조회할 기능 유형.
-        db (Session): 데이터베이스 세션.
-
-    Returns:
-        dict: 카테고리 목록을 포함한 메시지가 담긴 JSON 응답.
-
-    Raises:
-        HTTPException 404: 요청한 기능이 존재하지 않는 경우.
-    """
-    existing_feature = db.query(Feature).filter(Feature.feature_type == feature).first()
-    if not existing_feature:
-        raise HTTPException(status_code=404, detail=f"Feature not found. ({feature})")
-
-    categories = db.query(Category).filter(Category.feature_id == existing_feature.feature_id).all()
-
-    message = f"**{feature}**에서 사용 가능한 카테고리 목록\n\n"
-    if categories:
-        message += ', '.join([category.category_name for category in categories])
-    else:
-        message += "아직 지원하는 카테고리가 없어요. 🥲"
-
-    return {"message": message}
-
-
 class GetCategoryRequest(BaseModel):
     user_id: str = Field(..., example="user123")
 
@@ -151,9 +120,9 @@ class CategoryResponse(BaseModel):
     class Config:
         orm_mode = True
 
-@router.get("/category", response_model=List[CategoryResponse])
-def get_category_list(
-    user_id: str = Query(..., description="User ID"),
+@router.get("/{user_id}", response_model=List[CategoryResponse])
+def get_user_categories(
+    user_id: str = Path(...),
     db: Session = db_dependency
 ):
     """

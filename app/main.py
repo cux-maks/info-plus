@@ -15,6 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routers.employee import router as employee_router
 from app.routers.news import router as news_router
 from app.routers.user import router as user_router
+from app.routers.feature import router as feature_router
 
 app = FastAPI(
     title="KakaoTalk Chatbot API",
@@ -34,6 +35,7 @@ app.add_middleware(
 app.include_router(user_router, prefix="/user")
 app.include_router(employee_router, prefix="/employee")
 app.include_router(news_router, prefix="/news")
+app.include_router(feature_router, prefix="/feature")
 @app.get("/")
 async def root():
     """루트 엔드포인트 핸들러.
