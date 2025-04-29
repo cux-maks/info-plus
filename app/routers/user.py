@@ -42,6 +42,10 @@ def add_category(request: SubscriptionRequest, db: Session = db_dependency):
     """
     verify_exists_user(request.user_id, db)
 
+    category = db.query(Category).filter_by(category_id=request.category_id).first()
+    if not category:
+        raise HTTPException(status_code=404, detail=f"Category {request.category_id} not found.")
+
     # 중복 체크
     existing_subscription = db.query(UserCategory).filter(
         UserCategory.user_id == request.user_id,
@@ -49,7 +53,7 @@ def add_category(request: SubscriptionRequest, db: Session = db_dependency):
     ).first()
 
     if existing_subscription:
-        raise HTTPException(status_code=400, detail="Already subscribed to this category.")
+        raise HTTPException(status_code=400, detail=f"Category {request.category_id} is already subscribed.")
 
     # 구독 정보 추가
     new_subscription = UserCategory(user_id=request.user_id, category_id=request.category_id)
@@ -86,6 +90,10 @@ def delete_category(
     # 1️⃣ 사용자가 실제 존재하는지 확인
     verify_exists_user(user_id, db)
 
+    category = db.query(Category).filter_by(category_id=category_id).first()
+    if not category:
+        raise HTTPException(status_code=404, detail=f"Category ID {category_id} not found.")
+
     # 2️⃣ 요청한 카테고리가 실제 존재하는지 확인
     category_exists = db.query(Category).filter(Category.category_id == category_id).first()
     if not category_exists:
@@ -98,10 +106,10 @@ def delete_category(
     ).first()
 
     if not existing_subscription:
-        raise HTTPException(status_code=404, detail="Subscription not found.")
+        raise HTTPException(status_code=404, detail=f"Category ID {category_id} is not subscribed.")
 
     if not existing_subscription.is_active:
-        raise HTTPException(status_code=400, detail="Subscription is already inactive.")
+        raise HTTPException(status_code=400, detail=f"Category ID {category_id} is already unsubscribed.")
 
     # 4️⃣ is_active 값을 False로 변경 (Soft Delete)
     existing_subscription.is_active = False
