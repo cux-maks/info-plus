@@ -12,8 +12,8 @@ from sqlalchemy.orm import Session
 from app.models.category import Category
 from app.models.feature import Feature
 from app.models.user_category import UserCategory
-from app.models.users import Users
 from app.utils.db_manager import db_manager
+from app.utils.verifier import verify_exists_user
 
 router = APIRouter()
 db_dependency = Depends(db_manager.get_db)  # 전역 변수로 설정
@@ -41,6 +41,8 @@ def add_category(request: SubscriptionRequest, db: Session = db_dependency):
     Raises:
         HTTPException 400: 이미 해당 카테고리를 구독 중인 경우.
     """
+    verify_exists_user(request.user_id, db)
+
     # 중복 체크
     existing_subscription = db.query(UserCategory).filter(
         UserCategory.user_id == request.user_id,
@@ -83,9 +85,7 @@ def delete_category(
     """
 
     # 1️⃣ 사용자가 실제 존재하는지 확인
-    user_exists = db.query(Users).filter(Users.user_id == user_id).first()
-    if not user_exists:
-        raise HTTPException(status_code=404, detail="User not found.")
+    verify_exists_user(user_id, db)
 
     # 2️⃣ 요청한 카테고리가 실제 존재하는지 확인
     category_exists = db.query(Category).filter(Category.category_id == category_id).first()
@@ -167,9 +167,7 @@ def get_category_list(
         List[CategoryResponse]: 구독 중인 카테고리 목록
     """
     # 사용자 존재 여부 확인
-    user_exists = db.query(Users).filter(Users.user_id == user_id).first()
-    if not user_exists:
-        raise HTTPException(status_code=404, detail="User not found.")
+    verify_exists_user(user_id, db)
 
     # 해당 사용자의 활성화된 구독 목록 조회
     subscriptions = (
@@ -185,5 +183,4 @@ def get_category_list(
             category_name=sub.category.category_name
         )
         for sub in subscriptions if sub.category is not None and sub.category.feature is not None
-]
-
+    ]
