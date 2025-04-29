@@ -84,10 +84,7 @@ def test_client():
 # ✅ 사용자가 존재하고 해당 사용자의 구독 카테고리 목록이 정상 반환된 경우
 def test_get_category_list_success(test_client: TestClient, test_db):
     """구독 중인 카테고리 목록 정상 조회 테스트"""
-    response = test_client.get(
-        "/user/category",
-        params={"user_id": "user123"}
-    )
+    response = test_client.get("/user/user123")
     assert response.status_code == 200
 
     data = response.json()
@@ -98,9 +95,6 @@ def test_get_category_list_success(test_client: TestClient, test_db):
 # ✅ 사용자가 없을 경우: 404 응답
 def test_get_category_list_user_not_found(test_client: TestClient, test_db):
     """존재하지 않는 사용자에 대한 조회 테스트"""
-    response = test_client.get(
-        "/user/category",
-        params={"user_id": "invalid_user"}
-    )
+    response = test_client.get("/user/invalid_user")
     assert response.status_code == 404
     assert response.json() == {"detail": "User not found."}
