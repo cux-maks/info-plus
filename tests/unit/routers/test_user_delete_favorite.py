@@ -128,7 +128,7 @@ def test_delete_user_favorit_success(test_db, test_client):
         None
     """
     response = test_client.delete(
-        "/user/delete/favorit",
+        "/user/subscribe",
         params={"user_id": "user123", "category_id": 1}  # ✅ params 사용
     )
     assert response.status_code == 200
@@ -160,7 +160,7 @@ def test_delete_user_favorit_invalid_user(test_db, test_client):
         None
     """
     response = test_client.delete(
-        "/user/delete/favorit",
+        "/user/subscribe",
         params={"user_id": "invalid_user", "category_id": 1}  # ✅ params 사용
     )
     assert response.status_code == 404
@@ -178,11 +178,11 @@ def test_delete_user_favorit_invalid_category(test_db, test_client):
         None
     """
     response = test_client.delete(
-        "/user/delete/favorit",
+        "/user/subscribe",
         params={"user_id": "user123", "category_id": 9999}  # ✅ params 사용
     )
     assert response.status_code == 404
-    assert response.json() == {"detail": "Category not found."}
+    assert response.json() == {"detail": "Category ID 9999 not found."}
 
 # ✅ 구독하지 않은 카테고리 삭제 요청 → 404 반환
 def test_delete_user_favorit_not_subscribed(test_db, test_client):
@@ -196,11 +196,11 @@ def test_delete_user_favorit_not_subscribed(test_db, test_client):
         None
     """
     response = test_client.delete(
-        "/user/delete/favorit",
+        "/user/subscribe",
         params={"user_id": "user123", "category_id": 2}  # ✅ 존재하지 않는 카테고리 ID
     )
     assert response.status_code == 404
-    assert response.json() == {"detail": "Subscription not found."}
+    assert response.json() == {"detail": "Category ID 2 is not subscribed."}
 
 # ✅ 이미 비활성화된 구독 삭제 요청 → 400 반환
 def test_delete_user_favorit_already_inactive(test_db, test_client):
@@ -214,12 +214,12 @@ def test_delete_user_favorit_already_inactive(test_db, test_client):
         None
     """
     # ✅ 먼저 정상 삭제 요청 실행
-    test_client.delete("/user/delete/favorit", params={"user_id": "user123", "category_id": 1})
+    test_client.delete("/user/subscribe", params={"user_id": "user123", "category_id": 1})
 
     # ✅ 다시 삭제 요청하면 400 에러 발생해야 함
     response = test_client.delete(
-        "/user/delete/favorit",
+        "/user/subscribe",
         params={"user_id": "user123", "category_id": 1}  # ✅ params 사용
     )
     assert response.status_code == 400
-    assert response.json() == {"detail": "Subscription is already inactive."}
+    assert response.json() == {"detail": "Category ID 1 is already unsubscribed."}

@@ -116,7 +116,7 @@ def test_get_categories_by_feature_success(test_db, test_client):
     Returns:
         None
     """
-    response = test_client.get("/user/categories/news")
+    response = test_client.get("/feature/news")
     assert response.status_code == 200
     assert "IT/개발" in response.json()["message"]
     assert "마케팅" in response.json()["message"]
@@ -135,7 +135,7 @@ def test_get_categories_by_feature_not_found(test_db, test_client):
     Returns:
         None
     """
-    response = test_client.get("/user/categories/NonExistentFeature")
+    response = test_client.get("/feature/NonExistentFeature")
     assert response.status_code == 404
     assert "Feature not found" in response.json()["detail"]
 
@@ -157,6 +157,6 @@ def test_get_categories_by_feature_empty(test_db, test_client):
     db.commit()
     db.close()
 
-    response = test_client.get("/user/categories/Movies")
+    response = test_client.get("/feature/Movies")
     assert response.status_code == 200
     assert "아직 지원하는 카테고리가 없어요" in response.json()["message"]

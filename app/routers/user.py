@@ -5,15 +5,14 @@
 """
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.models.category import Category
-from app.models.feature import Feature
 from app.models.user_category import UserCategory
-from app.models.users import Users
 from app.utils.db_manager import db_manager
+from app.utils.verifier import verify_exists_user
 
 router = APIRouter()
 db_dependency = Depends(db_manager.get_db)  # 전역 변수로 설정
@@ -27,7 +26,7 @@ class SubscriptionRequest(BaseModel):
     user_id: str = Field(..., example="user123")
     category_id: int = Field(..., example=1)
 
-@router.post("/add/favorit")
+@router.post("/subscribe")
 def add_category(request: SubscriptionRequest, db: Session = db_dependency):
     """사용자가 특정 카테고리를 구독하는 엔드포인트입니다.
 
@@ -41,6 +40,12 @@ def add_category(request: SubscriptionRequest, db: Session = db_dependency):
     Raises:
         HTTPException 400: 이미 해당 카테고리를 구독 중인 경우.
     """
+    verify_exists_user(request.user_id, db)
+
+    category = db.query(Category).filter_by(category_id=request.category_id).first()
+    if not category:
+        raise HTTPException(status_code=404, detail=f"Category {request.category_id} not found.")
+
     # 중복 체크
     existing_subscription = db.query(UserCategory).filter(
         UserCategory.user_id == request.user_id,
@@ -48,7 +53,7 @@ def add_category(request: SubscriptionRequest, db: Session = db_dependency):
     ).first()
 
     if existing_subscription:
-        raise HTTPException(status_code=400, detail="Already subscribed to this category.")
+        raise HTTPException(status_code=400, detail=f"Category {request.category_id} is already subscribed.")
 
     # 구독 정보 추가
     new_subscription = UserCategory(user_id=request.user_id, category_id=request.category_id)
@@ -58,7 +63,7 @@ def add_category(request: SubscriptionRequest, db: Session = db_dependency):
 
     return {"message": "Subscription successful!"}
 
-@router.delete("/delete/favorit")
+@router.delete("/subscribe")
 def delete_category(
     user_id: str = Query(..., description="User ID"),
     category_id: int = Query(..., description="Category ID"),
@@ -83,9 +88,11 @@ def delete_category(
     """
 
     # 1️⃣ 사용자가 실제 존재하는지 확인
-    user_exists = db.query(Users).filter(Users.user_id == user_id).first()
-    if not user_exists:
-        raise HTTPException(status_code=404, detail="User not found.")
+    verify_exists_user(user_id, db)
+
+    category = db.query(Category).filter_by(category_id=category_id).first()
+    if not category:
+        raise HTTPException(status_code=404, detail=f"Category ID {category_id} not found.")
 
     # 2️⃣ 요청한 카테고리가 실제 존재하는지 확인
     category_exists = db.query(Category).filter(Category.category_id == category_id).first()
@@ -99,10 +106,10 @@ def delete_category(
     ).first()
 
     if not existing_subscription:
-        raise HTTPException(status_code=404, detail="Subscription not found.")
+        raise HTTPException(status_code=404, detail=f"Category ID {category_id} is not subscribed.")
 
     if not existing_subscription.is_active:
-        raise HTTPException(status_code=400, detail="Subscription is already inactive.")
+        raise HTTPException(status_code=400, detail=f"Category ID {category_id} is already unsubscribed.")
 
     # 4️⃣ is_active 값을 False로 변경 (Soft Delete)
     existing_subscription.is_active = False
@@ -110,36 +117,6 @@ def delete_category(
     db.refresh(existing_subscription)
 
     return {"message": "Subscription successfully deactivated."}
-
-
-@router.get(path="/categories/{feature}")
-def get_categories_by_feature(feature: str, db: Session = db_dependency):
-    """특정 기능에 해당하는 카테고리 목록을 조회하는 엔드포인트입니다.
-
-    Args:
-        feature (str): 카테고리를 조회할 기능 유형.
-        db (Session): 데이터베이스 세션.
-
-    Returns:
-        dict: 카테고리 목록을 포함한 메시지가 담긴 JSON 응답.
-
-    Raises:
-        HTTPException 404: 요청한 기능이 존재하지 않는 경우.
-    """
-    existing_feature = db.query(Feature).filter(Feature.feature_type == feature).first()
-    if not existing_feature:
-        raise HTTPException(status_code=404, detail=f"Feature not found. ({feature})")
-
-    categories = db.query(Category).filter(Category.feature_id == existing_feature.feature_id).all()
-
-    message = f"**{feature}**에서 사용 가능한 카테고리 목록\n\n"
-    if categories:
-        message += ', '.join([category.category_name for category in categories])
-    else:
-        message += "아직 지원하는 카테고리가 없어요. 🥲"
-
-    return {"message": message}
-
 
 class GetCategoryRequest(BaseModel):
     user_id: str = Field(..., example="user123")
@@ -151,9 +128,9 @@ class CategoryResponse(BaseModel):
     class Config:
         orm_mode = True
 
-@router.get("/category", response_model=List[CategoryResponse])
-def get_category_list(
-    user_id: str = Query(..., description="User ID"),
+@router.get("/{user_id}", response_model=List[CategoryResponse])
+def get_user_categories(
+    user_id: str = Path(...),
     db: Session = db_dependency
 ):
     """
@@ -167,9 +144,7 @@ def get_category_list(
         List[CategoryResponse]: 구독 중인 카테고리 목록
     """
     # 사용자 존재 여부 확인
-    user_exists = db.query(Users).filter(Users.user_id == user_id).first()
-    if not user_exists:
-        raise HTTPException(status_code=404, detail="User not found.")
+    verify_exists_user(user_id, db)
 
     # 해당 사용자의 활성화된 구독 목록 조회
     subscriptions = (
@@ -185,5 +160,4 @@ def get_category_list(
             category_name=sub.category.category_name
         )
         for sub in subscriptions if sub.category is not None and sub.category.feature is not None
-]
-
+    ]

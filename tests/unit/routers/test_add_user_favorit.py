@@ -112,7 +112,7 @@ def test_add_user_favorit_success(test_db, test_client):
         None
     """
     response = test_client.post(
-        "/user/add/favorit",
+        "/user/subscribe",
         json={"user_id": "user123", "category_id": 1}
     )
     assert response.status_code == 200
@@ -129,9 +129,9 @@ def test_add_user_favorit_duplicate(test_db, test_client):
     Returns:
         None
     """
-    response1 = test_client.post("/user/add/favorit", json={"user_id": "user123", "category_id": 1})
+    response1 = test_client.post("/user/subscribe", json={"user_id": "user123", "category_id": 1})
     assert response1.status_code == 200  # ✅ 첫 번째 요청은 성공
 
-    response2 = test_client.post("/user/add/favorit", json={"user_id": "user123", "category_id": 1})
+    response2 = test_client.post("/user/subscribe", json={"user_id": "user123", "category_id": 1})
     assert response2.status_code == 400  # ✅ 두 번째 요청은 중복 에러
-    assert response2.json() == {"detail": "Already subscribed to this category."}
+    assert response2.json() == {"detail": "Category 1 is already subscribed."}
