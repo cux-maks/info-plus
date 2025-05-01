@@ -28,19 +28,49 @@ def add_default_categories(db):
     feature_employee = db.query(Feature).filter_by(feature_type="employee").first()
 
     categories = [
-        Category(category_name="IT/개발", feature=feature_news),
+        # 뉴스 관련 카테고리
+        Category(category_name="IT/과학", feature=feature_news),
         Category(category_name="마케팅", feature=feature_news),
         Category(category_name="디자인", feature=feature_news),
         Category(category_name="경영/기획", feature=feature_news),
         Category(category_name="영업/제휴", feature=feature_news),
-        Category(category_name="인사/채용", feature=feature_employee),
-        Category(category_name="재무/회계", feature=feature_employee),
-        Category(category_name="법무/법률", feature=feature_employee),
-        Category(category_name="생산/제조", feature=feature_employee),
-        Category(category_name="물류/유통", feature=feature_employee)
+        Category(category_name="정치", feature=feature_news),
+        Category(category_name="경제", feature=feature_news),
+        Category(category_name="사회", feature=feature_news),
+        Category(category_name="생활/문화", feature=feature_news),
+        Category(category_name="세계", feature=feature_news),
+
+        # 채용 관련 카테고리
+        Category(category_name="사업관리", feature=feature_employee),
+        Category(category_name="경영·회계·사무", feature=feature_employee),
+        Category(category_name="금융·보험", feature=feature_employee),
+        Category(category_name="교육·자연·사회과학", feature=feature_employee),
+        Category(category_name="법률·경찰·소방·교도·국방", feature=feature_employee),
+        Category(category_name="보건·의료", feature=feature_employee),
+        Category(category_name="사회복지·종교", feature=feature_employee),
+        Category(category_name="문화·예술·디자인·방송", feature=feature_employee),
+        Category(category_name="운전·운송", feature=feature_employee),
+        Category(category_name="영업판매", feature=feature_employee),
+        Category(category_name="경비·청소", feature=feature_employee),
+        Category(category_name="이용·숙박·여행·오락·스포츠", feature=feature_employee),
+        Category(category_name="음식서비스", feature=feature_employee),
+        Category(category_name="건설", feature=feature_employee),
+        Category(category_name="기계", feature=feature_employee),
+        Category(category_name="재료", feature=feature_employee),
+        Category(category_name="화학", feature=feature_employee),
+        Category(category_name="섬유·의복", feature=feature_employee),
+        Category(category_name="전기·전자", feature=feature_employee),
+        Category(category_name="정보통신", feature=feature_employee),
+        Category(category_name="식품가공", feature=feature_employee),
+        Category(category_name="인쇄·목재·가구·공예", feature=feature_employee),
+        Category(category_name="환경·에너지·안전", feature=feature_employee),
+        Category(category_name="농림어업", feature=feature_employee),
+        Category(category_name="연구", feature=feature_employee),
     ]
+
     for category in categories:
         db.add(category)
+
 
 
 def add_default_employees(db):
