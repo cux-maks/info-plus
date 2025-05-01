@@ -6,6 +6,7 @@
 
 from sqlalchemy import TIMESTAMP, Column, Date, ForeignKey, Integer, String, func
 from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.postgresql import ARRAY
 
 from app.models.base import Base
 
@@ -41,8 +42,8 @@ class Employee(Base):
     start_date = Column(Date, nullable=False) # 공고 시작일
     end_date = Column(Date, nullable=False) # 공고 마감일
     recrut_se = Column(String(100), nullable=True)  # 신입/경력
-    hire_type_lst = Column(String(100), nullable=True)  # 정규직/계약직 등
-    ncs_cd_lst = Column(String(100), nullable=True)  # 직무 코드
+    hire_type_lst = Column(ARRAY(String), nullable=True)  # 정규직/계약직 등 // 중복 저장 가능성 있음
+    ncs_cd_lst = Column(ARRAY(String), nullable=True)  # 직무 코드 // 중복 저장 가능성 있음
     detail_url = Column(String(255), nullable=True)  # 상세 링크
     recrut_pblnt_sn = Column(Integer, nullable=False, unique=True)  # ALIO 공고 고유번호
     created_at = Column(TIMESTAMP, server_default=func.now())  # 등록 시각
