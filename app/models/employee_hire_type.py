@@ -17,7 +17,7 @@ class EmployeeHireType(Base):
     __tablename__ = "employee_hire_type"
 
     recruit_id = Column(Integer, ForeignKey("employee.recruit_id"), primary_key=True)
-    hire_type_id = Column(Integer, ForeignKey("hire_type.hire_id"), primary_key=True)
+    hire_type_id = Column(Integer, ForeignKey("hire_type.hire_type_id"), primary_key=True)
 
     employee = relationship("Employee", back_populates="hire_types")
     hire_type = relationship("HireType", back_populates="employees")
