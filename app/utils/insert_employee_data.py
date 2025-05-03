@@ -1,9 +1,8 @@
-import requests
-import json
 from datetime import datetime, timedelta
 
+import requests
+
 from app.models.employee import Employee
-from app.utils.db_manager import db_manager
 
 # ✅ NCS 코드 → 카테고리 ID 매핑 (카테고리 11~35에 해당)
 NCS_CATEGORY_MAP = {
