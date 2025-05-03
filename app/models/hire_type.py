@@ -15,7 +15,8 @@ class HireType(Base):
 
     __tablename__ = "hire_type"
 
-    hire_id = Column(Integer, primary_key=True, autoincrement=True)
-    hire_name = Column(String(10), nullable=False)
+    hire_type_id = Column(Integer, primary_key=True, autoincrement=True)
+    hire_type_name = Column(String(10), nullable=False)
+    hire_type_code = Column(String(10), nullable=False, unique=True)
 
     employees = relationship("EmployeeHireType", back_populates="hire_type", cascade="all, delete-orphan")

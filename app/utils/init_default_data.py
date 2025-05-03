@@ -10,6 +10,10 @@ from app.models.employee import Employee
 from app.models.feature import Feature
 from app.models.news import News
 from app.models.users import Users
+from app.models.hire_type import HireType
+from app.models.employee_category import EmployeeCategory
+from app.models.employee_hire_type import EmployeeHireType
+
 
 
 def add_default_features(db):
@@ -71,79 +75,184 @@ def add_default_categories(db):
     for category in categories:
         db.add(category)
 
+def add_default_hire_type(db):
+    """기본 HireType 데이터를 추가합니다."""
 
+    hire_types = [
+        HireType(
+            hire_type_id=1,
+            hire_type_name="정규직",
+            hire_type_code="R1010"
+        ),
+        HireType(
+            hire_type_id=2,
+            hire_type_name="계약직",
+            hire_type_code="R1020"
+        ),
+        HireType(
+            hire_type_id=3,
+            hire_type_name="무기계약직",
+            hire_type_code="R1030"
+        ),
+        HireType(
+            hire_type_id=4,
+            hire_type_name="비정규직",
+            hire_type_code="R1040"
+        ),
+        HireType(
+            hire_type_id=5,
+            hire_type_name="청년인턴",
+            hire_type_code="R1050"
+        ),
+        HireType(
+            hire_type_id=6,
+            hire_type_name="청년인턴(체험형)",
+            hire_type_code="R1060"
+        ),
+        HireType(
+            hire_type_id=7,
+            hire_type_name="청년인턴(채용형)",
+            hire_type_code="R1070"
+        ),
+    ]
+
+    for hire_type in hire_types:
+        db.add(hire_type)
 
 def add_default_employees(db):
     """기본 Employee(채용 공고) 데이터를 추가합니다. Category가 선행되어 있어야 함."""
     employees = [
         Employee(
-            recruit_id="1",
-            category_id=6,  # 인사/채용
+            recruit_id=1,
             title="2025년도 전문계약직(야간약사) 모집공고",
             institution="국민건강보험공단 일산병원",
             start_date=datetime.date(2025, 1, 9),
             end_date=datetime.date(2025, 1, 23),
             recrut_se="R2030", # 신입 + 경력
-            hire_type_lst="R1040", # 비정규직
-            ncs_cd_lst="R600006", # 보건.의료
             detail_url="https://nhimc.recruiter.co.kr/appsite/company/index",
             recrut_pblnt_sn=280272,
         ),
         Employee(
-            recruit_id="2",
-            category_id=6,  # 인사/채용
+            recruit_id=2,
             title="한전MCS(주) 2025년 상반기 신규채용",
             institution="한전MCS(주)",
             start_date=datetime.date(2025, 1, 9),
             end_date=datetime.date(2025, 1, 23),
             recrut_se="R2010", # 신입
-            hire_type_lst="R1010", # 정규직
-            ncs_cd_lst="R600015, R600019", # 기계,전기.전자
             detail_url="https://recruit.incruit.com/kepcomcs",
             recrut_pblnt_sn=280269,
         ),
         Employee(
-            recruit_id="3",
-            category_id=6,  # 인사/채용
+            recruit_id=3,
             title="한국보건사회연구원 행정인턴(장애인 제한경쟁) 채용 공고",
             institution="한국보건사회연구원",
             start_date=datetime.date(2025, 1, 9),
             end_date=datetime.date(2025, 1, 23),
             recrut_se="R2010", # 신입
-            hire_type_lst="R1060", # 청년인턴(체험형)
-            ncs_cd_lst="R600002", # 경영.회계.사무
             detail_url="https://kihasa.recruiter.co.kr/appsite/company/index",
             recrut_pblnt_sn=280268,
         ),
         Employee(
-            recruit_id="4",
-            category_id=6,  # 인사/채용
+            recruit_id=4,
             title="채용형 인턴 채용공고(주택관리공단 충북지사)",
             institution="주택관리공단(주)",
             start_date=datetime.date(2025, 1, 9),
             end_date=datetime.date(2025, 1, 16),
             recrut_se="R2030", # 신입 + 경력
-            hire_type_lst="R1070", # 청년인턴(채용형)
-            ncs_cd_lst="R600014,R600015,R600019,R600020,R600023", # 건설,기계,전기.전자,정보통신,환경.에너지.안전
             detail_url="https://opendata.alio.go.kr/recruit4",
             recrut_pblnt_sn=280267,
         ),
         Employee(
-            recruit_id="RECR20250405",
-            category_id=8,  # 법무/법률
+            recruit_id=5,
             title="한국형사·법무정책연구원 2025년도 제1차 채용공고[위촉조사연구원(육아휴직대체)]",
             institution="한국형사·법무정책연구원",
             start_date=datetime.date(2025, 1, 9),
             end_date=datetime.date(2025, 1, 24),
             recrut_se="R2030", # 신입 + 경력
-            hire_type_lst="R1040", # 비정규직
-            ncs_cd_lst="R600025", # 연구
             detail_url="https://opendata.alio.go.kr/recruit5",
             recrut_pblnt_sn=280266,
         )
     ]
     for emp in employees:
         db.add(emp)
+
+def add_default_employee_hire_type(db):
+    """기본 EmployeeHireType 데이터를 추가합니다. Employee가 선행되어 있어야 함."""
+
+    employee_hire_types = [
+        EmployeeHireType(
+            recruit_id=1,
+            hire_type_id=4 # 비정규직
+        ),
+        EmployeeHireType(
+            recruit_id=2,
+            hire_type_id=1 # 정규직
+        ),
+        EmployeeHireType(
+            recruit_id=3,
+            hire_type_id=6 # 청년인턴(체험형)
+        ),
+        EmployeeHireType(
+            recruit_id=4,
+            hire_type_id=7 # 청년인턴(채용형)
+        ),
+        EmployeeHireType(
+            recruit_id=5,
+            hire_type_id=4 # 비정규직
+        )
+    ]
+
+    for emp_hire in employee_hire_types:
+        db.add(emp_hire)
+
+def add_default_employee_category(db):
+    """기본 EmployeeCategory 데이터를 추가합니다. Employee가 선행되어 있어야 함."""
+
+    employee_categories = [
+        EmployeeCategory(
+            recruit_id=1,
+            category_id=16 # 보건.의료
+        ),
+        EmployeeCategory(
+            recruit_id=2,
+            category_id=25  # 기계
+        ),
+        EmployeeCategory(
+            recruit_id=2,
+            category_id=29  # 전기.전자
+        ),
+        EmployeeCategory(
+            recruit_id=3,
+            category_id=12 # 경영.회계.사무
+        ),
+        EmployeeCategory(
+            recruit_id=4,
+            category_id=24 # 건설
+        ),
+        EmployeeCategory(
+            recruit_id=4,
+            category_id=25 # 기계
+        ),
+        EmployeeCategory(
+            recruit_id=4,
+            category_id=29 # 전기.전자
+        ),
+        EmployeeCategory(
+            recruit_id=4,
+            category_id=30 # 정보통신
+        ),
+        EmployeeCategory(
+            recruit_id=4,
+            category_id=33 # 환경.에너지.안전
+        ),
+        EmployeeCategory(
+            recruit_id=5,
+            category_id=35 # 연구
+        ),
+    ]
+
+    for emp_cat in employee_categories:
+        db.add(emp_cat)
 
 
 def add_default_news(db):

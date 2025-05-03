@@ -19,14 +19,11 @@ class Employee(Base):
 
     Attributes:
         recruit_id (int): 채용 공고의 고유 ID.
-        category_id (int): 카테고리 테이블의 외래 키.
         title (str): 채용 공고 제목.
         institution (str): 채용 기관명.
         start_date (date): 공고 시작일.
         end_date (date): 공고 마감일.
         recrut_se (str): 경력 구분 (신입/경력).
-        hire_type_lst (str): 채용 형태 목록.
-        ncs_cd_lst (str): NCS 직무 코드 목록.
         detail_url (str): 공고 상세보기 URL.
         recrut_pblnt_sn (int): 채용 공고 고유 번호 (숫자 ID).
         created_at (datetime): 데이터 저장 시각 (자동 생성).
@@ -45,4 +42,5 @@ class Employee(Base):
     recrut_pblnt_sn = Column(Integer, nullable=False, unique=True)  # ALIO 공고 고유번호
     created_at = Column(TIMESTAMP, server_default=func.now())  # 등록 시각
 
-    category = relationship("Category", back_populates="employee")  # 역방향 참조
+    categories = relationship("EmployeeCategory", back_populates="employee", cascade="all, delete-orphan")
+    hire_types = relationship("EmployeeHireType", back_populates="employee", cascade="all, delete-orphan")
