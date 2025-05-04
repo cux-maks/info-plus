@@ -7,8 +7,10 @@
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from sqlalchemy import select, join
 
-from app.models import Employee, EmployeeCategory, UserCategory, Users
+from app.models import Employee, UserCategory, Users, EmployeeCategory
+from app.utils.db_manager import db_manager
 
 router = APIRouter()
 db_dependency = Depends(db_manager.get_db)  # 전역 변수로 설정
