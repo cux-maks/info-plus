@@ -21,13 +21,43 @@ def test_fetch_and_insert_recent_jobs_success(mock_get, mock_db_session):
         "result": [
             {
                 "recrutPblntSn": "12345678",
-                "recrutPbancTtl": "채용공고 제목",
-                "instNm": "테스트 기관",
+                "recrutPbancTtl": "채용공고 제목 1",
+                "instNm": "테스트 기관 1",
                 "pbancBgngYmd": "20240501",
                 "pbancEndYmd": "20240515",
-                "recrutSe": "정규직",
+                "recrutSe": "R2010",
                 "ncsCdLst": "R600001",
                 "hireTypeLst": "R1010"
+            },
+            {
+                "recrutPblntSn": "55667788",
+                "recrutPbancTtl": "채용공고 제목 5",
+                "instNm": "테스트 기관 5",
+                "pbancBgngYmd": "20240901",
+                "pbancEndYmd": "20240915",
+                "recrutSe": "R2010",
+                "ncsCdLst": "R600002",
+                "hireTypeLst": "R1010,R1020"  # 중복된 고용형태
+            },
+            {
+                "recrutPblntSn": "77889900",
+                "recrutPbancTtl": "채용공고 제목 6",
+                "instNm": "테스트 기관 6",
+                "pbancBgngYmd": "20241001",
+                "pbancEndYmd": "20241015",
+                "recrutSe": "R2030",
+                "ncsCdLst": "R600005,R600020",  # 중복된 NCS 코드
+                "hireTypeLst": "R1030"
+            },
+            {
+                "recrutPblntSn": "99001122",
+                "recrutPbancTtl": "채용공고 제목 7",
+                "instNm": "테스트 기관 7",
+                "pbancBgngYmd": "20241101",
+                "pbancEndYmd": "20241115",
+                "recrutSe": "R2010",  # 신입
+                "ncsCdLst": "R600002,R600005,R600020",  # 중복된 NCS 코드
+                "hireTypeLst": "R1010,R1040"  # 중복된 고용형태
             }
         ]
     }
@@ -36,8 +66,8 @@ def test_fetch_and_insert_recent_jobs_success(mock_get, mock_db_session):
 
     inserted = fetch_and_insert_recent_jobs(days=1, db_session=mock_db_session)
 
-    assert inserted == 1
-    assert mock_db_session.add.call_count == 3  # Employee + Category + HireType
+    assert inserted == 4
+    assert mock_db_session.add.call_count == 17  # 4개의 공고 + 7개의 카테고리 + 6개의 고용형태
     mock_db_session.commit.assert_called_once()
 
 @patch("app.utils.insert_employee_data.requests.get")
