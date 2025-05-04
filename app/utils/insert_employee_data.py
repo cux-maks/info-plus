@@ -1,10 +1,14 @@
+import os
 from datetime import datetime, timedelta
 
 import requests
+from dotenv import load_dotenv
 
 from app.models.employee import Employee
 from app.models.employee_category import EmployeeCategory
 from app.models.employee_hire_type import EmployeeHireType
+
+load_dotenv()  # .env 파일 로딩
 
 # ✅ NCS 코드 → 카테고리 ID 매핑 (카테고리 11~35에 해당)
 NCS_CATEGORY_MAP = {
@@ -23,7 +27,7 @@ HIRE_TYPE_CODE_TO_ID = {
 }
 
 API_URL = 'http://apis.data.go.kr/1051000/recruitment/list'
-API_KEY = 'BMuu6msPlcAzIRXBs9HEspNVRQlWkHKREOuOu9rPIC/20G3LoydNLbWcQR+uI31y2CHvMgyi9YpDfxkqTWtdXg=='
+API_KEY = os.getenv('RECRUIT_API_KEY')
 
 def format_date(date_str):
     """yyyymmdd 형식을 yyyy-mm-dd로 변환합니다."""
