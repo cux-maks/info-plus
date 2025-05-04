@@ -1,12 +1,25 @@
 from datetime import datetime, timedelta
-
 import requests
 
 from app.models.employee import Employee
+from app.models.employee_hire_type import EmployeeHireType
+from app.models.employee_category import EmployeeCategory
+from app.models.hire_type import HireType  # 고용형태 코드/ID 매핑용
 
 # ✅ NCS 코드 → 카테고리 ID 매핑 (카테고리 11~35에 해당)
 NCS_CATEGORY_MAP = {
     f"R6000{str(i).zfill(2)}": 10 + i for i in range(1, 26)
+}
+
+# HireType 코드 → hire_type_id 매핑 (미리 DB에 정의되어 있어야 함)
+HIRE_TYPE_CODE_TO_ID = {
+    "R1010": 1,  # 정규직
+    "R1020": 2,  # 계약직
+    "R1030": 3,  # 무기계약직
+    "R1040": 4,  # 비정규직
+    "R1050": 5,  # 청년인턴
+    "R1060": 6,  # 청년인턴(체험형)
+    "R1070": 7,  # 청년인턴(채용형)
 }
 
 API_URL = 'http://apis.data.go.kr/1051000/recruitment/list'
@@ -29,14 +42,12 @@ def fetch_and_insert_recent_jobs(days=1, db_session=None):
         db_session (Session): SQLAlchemy 세션 객체.
 
     API Parameters Used:
-        start_date (str): 조회 시작일 (yyyy-mm-dd 형식).
-        end_date (str): 조회 종료일 (yyyy-mm-dd 형식).
         pbancBgngYmd (str): 공고 시작일 (yyyymmdd).
         pbancEndYmd (str): 공고 종료일 (yyyymmdd).
         hireTypeLst (str): 고용형태 코드 (예: R1000).
-        workRgnLst (str): 근무지 코드 (예: R3000).
+        workRgnLst (str): 근무지 코드 (예: R3000). // 현재 사용하지 않음
         ncsCdLst (str): NCS 직무 분류 코드 (예: R6000).
-        acbgCondLst (str): 학력 조건 코드 (예: R7000).
+        acbgCondLst (str): 학력 조건 코드 (예: R7000). // 현재 사용하지 않음
 
     Returns:
         int: 저장된 채용 공고 수.
@@ -69,48 +80,65 @@ def fetch_and_insert_recent_jobs(days=1, db_session=None):
 
     for job in result_list:
         try:
-            # ✅ 1. 복수의 NCS 코드(직무분류코드)와 채용형태코드가 콤마로 구분되어 들어올 수 있음
+            # NCS 코드 리스트 추출 (예: "R600001,R600002,...")
             ncs_codes = job.get("ncsCdLst", "")
-            ncs_code_list = ncs_codes.split(",") if ncs_codes else []  # 예: "R600001,R600005" → ["R600001", "R600005"]
+            ncs_code_list = ncs_codes.split(",") if ncs_codes else []
 
+            # 고용형태 코드 리스트 추출 (예: "R1010,R1020,...")
             hire_types = job.get("hireTypeLst", "")
-            hire_type_list = hire_types.split(",") if hire_types else []  # 예: "R1010,R1030" → ["R1010", "R1030"]
+            hire_type_list = hire_types.split(",") if hire_types else []
 
-            # ✅ 2. NCS 코드들을 기반으로 해당하는 카테고리 ID 추출 (미리 정의된 매핑 딕셔너리에서 가져옴)
+            # NCS 코드 기반으로 내부 category_id 매핑
             matched_category_ids = [
                 NCS_CATEGORY_MAP.get(code) for code in ncs_code_list
-                if NCS_CATEGORY_MAP.get(code)  # None이 아닌 것만 필터링
+                if NCS_CATEGORY_MAP.get(code)
             ]
 
-            # ✅ 3. 매칭되는 카테고리가 하나도 없으면 skip
+            # 매핑된 category_id가 하나도 없으면 해당 공고는 저장하지 않음
             if not matched_category_ids:
                 continue
 
-            # ✅ 4. 매칭된 각 카테고리에 대해 같은 공고를 복수로 저장
+            # 채용 공고 고유번호 (recruit_id) 추출 및 정수형 변환
+            recruit_id = int(job["recrutPblntSn"])
+
+            # employee 테이블에 채용 공고 기본 정보 저장
+            new_employee = Employee(
+                recruit_id=recruit_id,
+                title=job.get("recrutPbancTtl", ""),            # 공고 제목
+                institution=job.get("instNm", ""),               # 기관명
+                start_date=format_date(job.get("pbancBgngYmd")), # 시작일
+                end_date=format_date(job.get("pbancEndYmd")),    # 마감일
+                recrut_se=job.get("recrutSe", ""),               # 공고 구분
+                detail_url=f"https://opendata.alio.go.kr/recruit?sn={recruit_id}",  # 상세 URL
+                recrut_pblnt_sn=recruit_id                       # 공고번호
+            )
+            db_session.add(new_employee)
+
+            # employee_category 테이블에 연결 정보 저장 (NCS → category_id)
             for category_id in matched_category_ids:
-                recruit_id = f"{job['recrutPblntSn']}_{category_id}"  # 중복 방지를 위해 공고번호 + 카테고리ID로 복합키 구성
-
-                new_job = Employee(
+                db_session.add(EmployeeCategory(
                     recruit_id=recruit_id,
-                    category_id=category_id,  # 복수 저장을 위한 핵심 부분
-                    title=job.get("recrutPbancTtl", ""),
-                    institution=job.get("instNm", ""),
-                    start_date=format_date(job.get("pbancBgngYmd")),
-                    end_date=format_date(job.get("pbancEndYmd")),
-                    recrut_se=job.get("recrutSe", ""),
-                    hire_type_lst=hire_type_list,  # PostgreSQL의 ARRAY(String)으로 저장
-                    ncs_cd_lst=ncs_code_list,      # PostgreSQL의 ARRAY(String)으로 저장
-                    detail_url=f"https://opendata.alio.go.kr/recruit?sn={job['recrutPblntSn']}",
-                    recrut_pblnt_sn=int(job["recrutPblntSn"]),
-                )
+                    category_id=category_id
+                ))
 
-                db_session.add(new_job)  # 실제 DB에 INSERT 요청
-                inserted_count += 1
+            # employee_hire_type 테이블에 연결 정보 저장 (고용형태 → hire_type_id)
+            for hire_code in hire_type_list:
+                hire_type_id = HIRE_TYPE_CODE_TO_ID.get(hire_code)
+                if hire_type_id:
+                    db_session.add(EmployeeHireType(
+                        recruit_id=recruit_id,
+                        hire_type_id=hire_type_id
+                    ))
+
+            # 정상적으로 하나의 공고 저장 완료 시 카운트 증가
+            inserted_count += 1
 
         except Exception as e:
+            # 예외 발생 시 해당 공고 저장 건너뛰고 에러 메시지 출력
             print(f"⚠️ 저장 실패: {e}")
             continue
 
+    # 전체 커밋 (성공적으로 추가된 공고들 반영)
     db_session.commit()
-    print(f"✅ 총 {inserted_count}건의 채용 공고가 저장되었습니다.")
+    print(f"✅ {start_date}부터 {end_date} 기간까지의 채용 공고 중 \n {inserted_count}건의 채용 공고가 저장되었습니다.")
     return inserted_count
