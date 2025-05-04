@@ -19,7 +19,17 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import text
 
 from app.main import app
-from app.models import Base, Category, Employee, Feature, UserCategory, Users, EmployeeCategory, HireType, EmployeeHireType
+from app.models import (
+    Base,
+    Category,
+    Employee,
+    EmployeeCategory,
+    EmployeeHireType,
+    Feature,
+    HireType,
+    UserCategory,
+    Users,
+)
 from app.utils.db_manager import db_manager
 
 # 테스트용 SQLite 파일 DB (세션 유지)
@@ -107,7 +117,7 @@ def test_db(setup_database):
     )
     db.add_all([job1, job2])
     db.commit()
-    
+
     employee_category1 = EmployeeCategory(
         recruit_id=1,
         category_id=1, # AI 카테고리

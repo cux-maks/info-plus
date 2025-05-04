@@ -1,10 +1,10 @@
 from datetime import datetime, timedelta
+
 import requests
 
 from app.models.employee import Employee
-from app.models.employee_hire_type import EmployeeHireType
 from app.models.employee_category import EmployeeCategory
-from app.models.hire_type import HireType  # 고용형태 코드/ID 매핑용
+from app.models.employee_hire_type import EmployeeHireType
 
 # ✅ NCS 코드 → 카테고리 ID 매핑 (카테고리 11~35에 해당)
 NCS_CATEGORY_MAP = {

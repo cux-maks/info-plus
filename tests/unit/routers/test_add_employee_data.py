@@ -1,11 +1,9 @@
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
-from datetime import datetime
 
 from app.utils.insert_employee_data import fetch_and_insert_recent_jobs
-from app.models.employee import Employee
-from app.models.employee_category import EmployeeCategory
-from app.models.employee_hire_type import EmployeeHireType
+
 
 @pytest.fixture
 def mock_db_session():
@@ -15,10 +13,10 @@ def mock_db_session():
     mock.commit = MagicMock()
     return mock
 
-@patch("app.jobs.fetch.requests.get")
+@patch("app.utils.insert_employee_data.requests.get")
 def test_fetch_and_insert_recent_jobs_success(mock_get, mock_db_session):
     """API 응답이 정상적이고, 데이터가 잘 저장되는 경우 테스트"""
-    
+
     mock_response_data = {
         "result": [
             {
@@ -42,7 +40,7 @@ def test_fetch_and_insert_recent_jobs_success(mock_get, mock_db_session):
     assert mock_db_session.add.call_count == 3  # Employee + Category + HireType
     mock_db_session.commit.assert_called_once()
 
-@patch("app.jobs.fetch.requests.get")
+@patch("app.utils.insert_employee_data.requests.get")
 def test_fetch_and_insert_recent_jobs_api_fail(mock_get, mock_db_session):
     """API가 실패 상태 코드를 반환할 경우 테스트"""
     mock_get.return_value.status_code = 500
@@ -51,7 +49,7 @@ def test_fetch_and_insert_recent_jobs_api_fail(mock_get, mock_db_session):
     assert inserted == 0
     mock_db_session.add.assert_not_called()
 
-@patch("app.jobs.fetch.requests.get")
+@patch("app.utils.insert_employee_data.requests.get")
 def test_fetch_and_insert_recent_jobs_invalid_json(mock_get, mock_db_session):
     """응답 JSON 파싱 실패 시 테스트"""
     mock_get.return_value.status_code = 200
