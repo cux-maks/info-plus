@@ -7,9 +7,8 @@
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import select, join
 
-from app.models import Employee, UserCategory, Users, EmployeeCategory
+from app.models import Employee, EmployeeCategory, UserCategory, Users
 from app.utils.db_manager import db_manager
 
 router = APIRouter()
