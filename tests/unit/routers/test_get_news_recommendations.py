@@ -97,31 +97,37 @@ def test_db(setup_database):
     # 뉴스 데이터 추가 (다양한 날짜와 카테고리)
     news_list = [
         News(
+            news_id=1,
             category_id=1,
             title="AI 뉴스 1",
             contents="AI 관련 뉴스 내용 1",
             source="AI News",
             publish_date=datetime.datetime.now() - datetime.timedelta(days=1),
             category="AI",
-            url="http://example.com/ai1"
+            url="http://example.com/ai1",
+            original_url='http://example.com/ai1'
         ),
         News(
+            news_id=2,
             category_id=2,
             title="Blockchain 뉴스 1",
             contents="Blockchain 관련 뉴스 내용 1",
             source="Blockchain News",
             publish_date=datetime.datetime.now() - datetime.timedelta(days=2),
             category="Blockchain",
-            url="http://example.com/blockchain1"
+            url="http://example.com/blockchain1",
+            original_url='http://example.com/ai1'
         ),
         News(
+            news_id=3,
             category_id=1,
             title="AI 뉴스 2",
             contents="AI 관련 뉴스 내용 2",
             source="AI News",
             publish_date=datetime.datetime.now() - datetime.timedelta(days=3),
             category="AI",
-            url="http://example.com/ai2"
+            url="http://example.com/ai2",
+            original_url='http://example.com/ai1'
         )
     ]
     db.add_all(news_list)
@@ -133,6 +139,12 @@ def test_db(setup_database):
     db.rollback()  # 테스트 종료 후 변경 사항 되돌리기
     db.close()  # 세션 종료
     Base.metadata.drop_all(bind=engine)  # 테스트 끝나면 DB 초기화
+
+@pytest.fixture(autouse=True)
+def mock_news_list():
+    with patch("app.routers.news.get_news_list_from_naver") as mock:
+        mock.return_value = []
+        yield mock
 
 # FastAPI 앱에 테스트용 DB 주입
 def override_get_db():
@@ -170,7 +182,10 @@ def test_news_recommendation_success(test_client: TestClient, test_db):
     assert "results" in data
     assert isinstance(data["results"], list)
     assert len(data["results"]) == 2
-    assert data["results"][0]["source"] in ["AI News", "Blockchain News"]  # 실제 데이터와 일치하도록 수정
+    all_news = []
+    for group in data["results"]:
+        all_news.extend(group["news_list"])
+    assert all_news[0]["source"] in ["AI News", "Blockchain News"]
 
 # ✅ 여러 카테고리 테스트
 def test_news_recommendation_multiple_categories(test_client: TestClient, test_db):
@@ -180,9 +195,9 @@ def test_news_recommendation_multiple_categories(test_client: TestClient, test_d
     assert response.status_code == 200
 
     data = response.json()
-    assert len(data["results"]) == 3
-    sources = [news["source"] for news in data["results"]]
-    assert "Blockchain News" in sources  # 실제 데이터와 일치하도록 수정
+    assert len(data["results"]) == 2
+    sources = [news["source"] for news in data["results"][1]["news_list"]]
+    assert "Blockchain News" in sources
     assert "Cloud Weekly" not in sources  # 비활성화된 카테고리 뉴스 미포함 확인
 
 # ✅ 최신 뉴스 우선 정렬 테스트
@@ -193,8 +208,9 @@ def test_news_recommendation_sorting(test_client: TestClient, test_db):
     assert response.status_code == 200
 
     data = response.json()
-    news_dates = [datetime.datetime.fromisoformat(news["publish_date"]) for news in data["results"]]
-    assert news_dates == sorted(news_dates, reverse=True)  # 최신순 정렬 확인
+    for group in data["results"]:
+        news_dates = [datetime.datetime.fromisoformat(news["publish_date"]) for news in group["news_list"]]
+        assert news_dates == sorted(news_dates, reverse=True) # 최신순 정렬 확인
 
 # ✅ limit 경계값 테스트
 def test_news_recommendation_limit_boundaries(test_client: TestClient, test_db):
@@ -203,13 +219,13 @@ def test_news_recommendation_limit_boundaries(test_client: TestClient, test_db):
     response = test_client.get("/news/recommend",
     params={"user_id": "user123", "limit": 1})
     assert response.status_code == 200
-    assert len(response.json()["results"]) == 1
+    assert len(response.json()["results"][0]["news_list"]) == 1  # 실제 데이터는 1개
 
     # 최대값 테스트
     response = test_client.get("/news/recommend",
     params={"user_id": "user123", "limit": 100})
     assert response.status_code == 200
-    assert len(response.json()["results"]) == 3  # 실제 데이터는 3개
+    assert len(response.json()["results"][0]["news_list"]) == 2  # 실제 데이터는 2개
 
     # 최대값 초과 테스트
     response = test_client.get("/news/recommend",
@@ -292,5 +308,5 @@ def test_news_recommendation_limit_less_than_requested(test_client: TestClient, 
     data = response.json()
     assert "results" in data
     assert isinstance(data["results"], list)
-    assert len(data["results"]) == 3  # 실제 데이터는 3개
-    assert data["message"] == "뉴스 데이터가 부족하여, 요청하신 뉴스 10개 중 3개의 뉴스만 조회되었습니다."
+    total_news = sum(len(group["news_list"]) for group in data["results"])
+    assert total_news == 3

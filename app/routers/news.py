@@ -9,7 +9,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from app.models import News, UserCategory, Users, Category
+from app.models import Category, News, UserCategory, Users
 from app.utils.db_manager import db_manager
 from app.utils.news_client import get_news_list_from_naver
 
@@ -56,7 +56,7 @@ def get_news_recommendations(
         .filter(UserCategory.user_id == user_id, UserCategory.is_active.is_(True))
         .all()
     )
-    category_ids = [uc.category_id for uc in user_categories]
+
     category_names = [uc.category_name for uc in user_categories]
 
     if not user_categories:  # 만약 활성화된 카테고리가 없다면

@@ -4,7 +4,7 @@
 카테고리와의 관계를 설정하여 뉴스의 분류를 관리합니다.
 """
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text, func, BigInteger
+from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import relationship
 
 from app.models.base import Base

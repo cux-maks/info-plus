@@ -1,10 +1,12 @@
 import hashlib
 import os
 from datetime import datetime
-from app.models.news import News
-from app.models.category import Category
+from urllib.parse import urlparse
 
 import requests
+
+from app.models.category import Category
+from app.models.news import News
 
 NAVER_API_URL = 'https://openapi.naver.com/v1/search/news.json'
 NAVER_CLIENT_ID = os.getenv('NAVER_CLIENT_ID')
@@ -64,8 +66,6 @@ def parse_naver_news(json_data, category_id, category_name):
 
     return news_list
 
-from urllib.parse import urlparse
-
 # 언론사 도메인 매핑 사전
 DOMAIN_TO_PROVIDER = {
     "akomnews.com": "대한한의사협회뉴스",
@@ -115,5 +115,5 @@ def map_news_source(source_url: str) -> str:
     try:
         domain = urlparse(source_url).netloc.replace("www.", "")
         return DOMAIN_TO_PROVIDER.get(domain, "Unknown")
-    except Exception as e:
+    except Exception:
         return "Unknown"
