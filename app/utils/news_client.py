@@ -2,6 +2,7 @@ import hashlib
 import os
 from datetime import datetime
 from app.models.news import News
+from app.models.category import Category
 
 import requests
 
@@ -9,7 +10,8 @@ NAVER_API_URL = 'https://openapi.naver.com/v1/search/news.json'
 NAVER_CLIENT_ID = os.getenv('NAVER_CLIENT_ID')
 NAVER_CLIENT_SECRET = os.getenv('NAVER_CLIENT_SECRET')
 
-def fetch_naver_news(query: str, display: int = 10, start: int = 1, sort: str = "date"):
+def get_news_list_from_naver(category: Category, display: int = 10, start: int = 1, sort: str = "date"):
+    query = category.category_name
     url = "https://openapi.naver.com/v1/search/news.json"
     headers = {
         "X-Naver-Client-Id": NAVER_CLIENT_ID,
@@ -25,9 +27,9 @@ def fetch_naver_news(query: str, display: int = 10, start: int = 1, sort: str = 
     response.raise_for_status()
 
     news_response = response.json()
-    return parse_naver_news_json(news_response, 1, query)
+    return parse_naver_news(news_response, category.category_id, query)
 
-def parse_naver_news_json(json_data, category_id, category_name):
+def parse_naver_news(json_data, category_id, category_name):
     news_list = []
 
     for item in json_data.get("items", []):

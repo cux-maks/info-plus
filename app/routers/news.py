@@ -9,9 +9,9 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from app.models import News, UserCategory, Users
+from app.models import News, UserCategory, Users, Category
 from app.utils.db_manager import db_manager
-from app.utils.news_client import fetch_naver_news
+from app.utils.news_client import get_news_list_from_naver
 
 logger = logging.getLogger(__name__)
 
@@ -51,60 +51,60 @@ def get_news_recommendations(
 
     # ✅ 2. 사용자 관심 카테고리 조회 (활성화된 것만)
     user_categories = (
-        db.query(UserCategory.category_id)
+        db.query(Category)
+        .join(UserCategory, Category.category_id == UserCategory.category_id)
         .filter(UserCategory.user_id == user_id, UserCategory.is_active.is_(True))
         .all()
     )
+    category_ids = [uc.category_id for uc in user_categories]
+    category_names = [uc.category_name for uc in user_categories]
+
     if not user_categories:  # 만약 활성화된 카테고리가 없다면
         logger.error(f"활성화된 카테고리가 없습니다. ({user_id})")
         raise HTTPException(status_code=404, detail="No active category subscriptions")
 
-    logger.info(f"사용자 관심 카테고리 조회: {user_categories}")
+    logger.info(f"사용자 관심 카테고리 조회: {category_names}")
 
-    category_ids = [uc.category_id for uc in user_categories]
+    for category in user_categories:
+        get_subscribed_news_list(category, limit, db)
 
     # ✅ 3. 해당 카테고리의 뉴스 조회
-    news = (
-        db.query(News)
-        .filter(News.category_id.in_(category_ids))
-        .order_by(
-            News.publish_date.desc()  # 최신 뉴스 우선
+    result = []
+    for category in user_categories:
+        news_list = (
+            db.query(News)
+            .filter(News.category_id == category.category_id)
+            .order_by(News.publish_date.desc())
+            .limit(limit)
+            .all()
         )
-        .limit(limit)
-        .all()
-    )
-    if not news:
-        logger.error(f"사용자 관심 카테고리에 해당하는 뉴스가 없습니다. ({user_id}, {category_ids})")
+        message = None
+        if len(news_list) < limit:
+            message = f"{category.category_name} 카테고리의 뉴스가 부족하여 {len(news_list)}개만 조회되었습니다."
+
+        result.append({
+            "category": category.category_name,
+            "message": message,
+            "news_list": news_list
+        })
+
+    if not any(group["news_list"] for group in result):
+        logger.error(f"사용자 관심 카테고리에 해당하는 뉴스가 없습니다. ({user_id})")
         raise HTTPException(status_code=404, detail="No news found for user's interests")
 
-    logger.info(f"사용자 관심 카테고리에 해당하는 뉴스 조회: {news}")
-
-    # ✅ 4. limit보다 적게 조회된 경우 메시지 추가
-    message = None
-    if len(news) < limit:
-        message = (
-            f"뉴스 데이터가 부족하여, 요청하신 뉴스 {limit}개 중 "
-            f"{len(news)}개의 뉴스만 조회되었습니다."
-        )
-
     return {
-        "results": news,
-        "message": message
+        "result": result
     }
 
-@router.post("/fetch-and-save/")
-def fetch_and_save_news(
-    query: str,
-    display: int = 10,
-    start: int = 1,
-    sort: str = "date",
+def get_subscribed_news_list(
+    category: Category,
+    limit: int = 10,
     db: Session = db_dependency
 ):
-    news_list = fetch_naver_news(query, display, start, sort)
+    news_list = get_news_list_from_naver(category, limit)
     saved_count = 0
 
     for news in news_list:
-        # 기존 DB에 news_id가 있는지 확인
         exists = db.query(News).filter(News.news_id == news.news_id).first()
         if not exists:
             db.add(news)
