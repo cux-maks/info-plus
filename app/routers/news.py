@@ -69,7 +69,7 @@ def get_news_recommendations(
         get_subscribed_news_list(category, limit, db)
 
     # ✅ 3. 해당 카테고리의 뉴스 조회
-    result = []
+    results = []
     for category in user_categories:
         news_list = (
             db.query(News)
@@ -82,18 +82,18 @@ def get_news_recommendations(
         if len(news_list) < limit:
             message = f"{category.category_name} 카테고리의 뉴스가 부족하여 {len(news_list)}개만 조회되었습니다."
 
-        result.append({
+        results.append({
             "category": category.category_name,
             "message": message,
             "news_list": news_list
         })
 
-    if not any(group["news_list"] for group in result):
+    if not any(group["news_list"] for group in results):
         logger.error(f"사용자 관심 카테고리에 해당하는 뉴스가 없습니다. ({user_id})")
         raise HTTPException(status_code=404, detail="No news found for user's interests")
 
     return {
-        "result": result
+        "results": results
     }
 
 def get_subscribed_news_list(
@@ -111,4 +111,4 @@ def get_subscribed_news_list(
             saved_count += 1
 
     db.commit()
-    return {"message": "뉴스 저장 완료", "count": saved_count}
+    logger.info(f"{saved_count}개의 뉴스 저장 완료")
