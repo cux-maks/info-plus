@@ -31,7 +31,7 @@ class Category(Base):
 
     category_id = Column(Integer, primary_key=True, autoincrement=True)
     feature_id = Column(Integer, ForeignKey("feature.feature_id"), nullable=False)
-    category_name = Column(String(10), nullable=False)
+    category_name = Column(String(50), nullable=False)
     created_at = Column(DateTime, default=func.now())
 
     feature = relationship("Feature", back_populates="category")

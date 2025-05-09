@@ -4,7 +4,7 @@
 카테고리와의 관계를 설정하여 뉴스의 분류를 관리합니다.
 """
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text, func, BigInteger
 from sqlalchemy.orm import relationship
 
 from app.models.base import Base
@@ -24,13 +24,14 @@ class News(Base):
         publish_date (date): 뉴스 작성일.
         category (str): 뉴스의 카테고리.
         url (str): 뉴스 URL.
+        original_url (str): 뉴스 제공사 원본 링크.
         created_at (datetime): 데이터베이스에 저장된 시간.
         category (relationship): Category 모델과의 관계 객체.
     """
 
     __tablename__ = "news"
 
-    news_id = Column(Integer, primary_key=True, autoincrement=True)
+    news_id = Column(BigInteger, primary_key=True, autoincrement=True)
     category_id = Column(Integer, ForeignKey("category.category_id"))
     title = Column(String(255), nullable=False)
     contents = Column(Text, nullable=False)
@@ -38,6 +39,7 @@ class News(Base):
     publish_date = Column(DateTime, nullable=False)
     category = Column(String(50), nullable=False)
     url = Column(String(255), nullable=False)
+    original_url = Column(String(255), nullable=False)
     created_at = Column(DateTime, default=func.now())
 
     category_rel = relationship("Category", back_populates="news")

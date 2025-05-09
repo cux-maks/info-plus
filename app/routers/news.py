@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.models import News, UserCategory, Users
 from app.utils.db_manager import db_manager
+from app.utils.news_client import fetch_naver_news
 
 logger = logging.getLogger(__name__)
 
@@ -90,3 +91,24 @@ def get_news_recommendations(
         "results": news,
         "message": message
     }
+
+@router.post("/fetch-and-save/")
+def fetch_and_save_news(
+    query: str,
+    display: int = 10,
+    start: int = 1,
+    sort: str = "date",
+    db: Session = db_dependency
+):
+    news_list = fetch_naver_news(query, display, start, sort)
+    saved_count = 0
+
+    for news in news_list:
+        # 기존 DB에 news_id가 있는지 확인
+        exists = db.query(News).filter(News.news_id == news.news_id).first()
+        if not exists:
+            db.add(news)
+            saved_count += 1
+
+    db.commit()
+    return {"message": "뉴스 저장 완료", "count": saved_count}
