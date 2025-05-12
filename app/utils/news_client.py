@@ -2,9 +2,9 @@ import hashlib
 import os
 from datetime import datetime
 from urllib.parse import urlparse
-import yaml
 
 import requests
+import yaml
 
 from app.models.category import Category
 from app.models.news import News
