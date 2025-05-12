@@ -2,6 +2,7 @@ import hashlib
 import os
 from datetime import datetime
 from urllib.parse import urlparse
+import yaml
 
 import requests
 
@@ -66,49 +67,8 @@ def parse_naver_news(json_data, category_id, category_name):
 
     return news_list
 
-# 언론사 도메인 매핑 사전
-DOMAIN_TO_PROVIDER = {
-    "akomnews.com": "대한한의사협회뉴스",
-    "asiatoday.co.kr": "아시아투데이",
-    "beyondpost.co.kr": "비욘드포스트",
-    "biz.heraldcorp.com": "헤럴드경제",
-    "bntnews.co.kr": "비앤티뉴스",
-    "breaknews.com": "브레이크뉴스",
-    "chosun.com": "조선일보",
-    "coinreaders.com": "코인리더스",
-    "dnews.co.kr": "디지털타임스",
-    "edaily.co.kr": "이데일리",
-    "fashionbiz.co.kr": "패션비즈",
-    "fnnews.com": "파이낸셜뉴스",
-    "hani.co.kr": "한겨레",
-    "hankyung.com": "한국경제",
-    "ikld.kr": "국토일보",
-    "joongdo.co.kr": "중도일보",
-    "khan.co.kr": "경향신문",
-    "mk.co.kr": "매일경제",
-    "munhwa.com": "문화일보",
-    "news.tvchosun.com": "TV조선",
-    "news1.kr": "뉴스1",
-    "newsis.com": "뉴시스",
-    "newsnjoy.or.kr": "뉴스앤조이",
-    "nocutnews.co.kr": "노컷뉴스",
-    "ohmynews.com": "오마이뉴스",
-    "pennmike.com": "펜앤드마이크",
-    "pressian.com": "프레시안",
-    "seouleconews.com": "서울이코노미뉴스",
-    "yna.co.kr": "연합뉴스",
-    "wikitree.co.kr": "위키트리",
-    "news.cpbc.co.kr": "가톨릭평화방송",
-    "sisaweek.com": "시사위크",
-    "fntoday.co.kr": "파이낸스투데이",
-    "n.news.naver.com": "네이버 통합 뉴스",
-    "edu.chosun.com": "",
-    "enewstoday.co.kr": "",
-    "asiatime.co.kr": "",
-    "widedaily.com": "",
-    "sedaily.com": "",
-    "electimes": "",
-}
+with open("domain_provider_mapping.yaml", "r", encoding="utf-8") as file:
+    DOMAIN_TO_PROVIDER = yaml.safe_load(file)
 
 # 언론사 추출 함수
 def map_news_source(source_url: str) -> str:
