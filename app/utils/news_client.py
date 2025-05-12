@@ -67,7 +67,9 @@ def parse_naver_news(json_data, category_id, category_name):
 
     return news_list
 
-with open("domain_provider_mapping.yaml", "r", encoding="utf-8") as file:
+yaml_path = os.path.join("/app/utils/news_provider_mapping.yaml")
+
+with open(yaml_path, "r", encoding="utf-8") as file:
     DOMAIN_TO_PROVIDER = yaml.safe_load(file)
 
 # 언론사 추출 함수
