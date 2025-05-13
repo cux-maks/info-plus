@@ -156,7 +156,8 @@ def add_default_news(db):
             source="ZD넷코리아",
             publish_date=datetime.datetime(2023, 6, 7, 9, 51),
             category="IT/개발",
-            url="https://n.news.naver.com/article/092/0002294509"
+            url="https://n.news.naver.com/article/092/0002294509",
+            original_url="https://n.news.naver.com/article/138/0002160000",
         ),
         News(
             category_id=2,  # 마케팅
@@ -165,7 +166,8 @@ def add_default_news(db):
             source="아이뉴스24",
             publish_date=datetime.datetime(2023, 10, 18, 11, 2),
             category="마케팅",
-            url="https://n.news.naver.com/article/031/0000780000"
+            url="https://n.news.naver.com/article/031/0000780000",
+            original_url="https://n.news.naver.com/article/138/0002160000",
         ),
         News(
             category_id=3,  # 디자인
@@ -174,7 +176,8 @@ def add_default_news(db):
             source="디지털데일리",
             publish_date=datetime.datetime(2023, 11, 3, 10, 43),
             category="디자인",
-            url="https://n.news.naver.com/article/138/0002160000"
+            url="https://n.news.naver.com/article/138/0002160000",
+            original_url="https://n.news.naver.com/article/138/0002160000",
         ),
     ]
     for news in news_items:
