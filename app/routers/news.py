@@ -11,7 +11,6 @@ from sqlalchemy.orm import Session
 
 from app.models import Category, News, UserCategory, Users
 from app.utils.db_manager import db_manager
-from app.utils.news_client import get_news_list_from_naver
 
 logger = logging.getLogger(__name__)
 
@@ -65,9 +64,6 @@ def get_news_recommendations(
 
     logger.info(f"사용자 관심 카테고리 조회: {category_names}")
 
-    for category in user_categories:
-        get_subscribed_news_list(category, limit, db)
-
     # ✅ 3. 해당 카테고리의 뉴스 조회
     results = []
     for category in user_categories:
@@ -95,20 +91,3 @@ def get_news_recommendations(
     return {
         "results": results
     }
-
-def get_subscribed_news_list(
-    category: Category,
-    limit: int = 10,
-    db: Session = db_dependency
-):
-    news_list = get_news_list_from_naver(category, limit)
-    saved_count = 0
-
-    for news in news_list:
-        exists = db.query(News).filter(News.news_id == news.news_id).first()
-        if not exists:
-            db.add(news)
-            saved_count += 1
-
-    db.commit()
-    logger.info(f"{saved_count}개의 뉴스 저장 완료")

@@ -140,12 +140,6 @@ def test_db(setup_database):
     db.close()  # 세션 종료
     Base.metadata.drop_all(bind=engine)  # 테스트 끝나면 DB 초기화
 
-@pytest.fixture(autouse=True)
-def mock_news_list():
-    with patch("app.routers.news.get_news_list_from_naver") as mock:
-        mock.return_value = []
-        yield mock
-
 # FastAPI 앱에 테스트용 DB 주입
 def override_get_db():
     """테스트용 DB 세션을 생성하고 제공하는 의존성 주입 함수입니다.

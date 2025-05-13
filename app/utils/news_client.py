@@ -1,17 +1,47 @@
 import hashlib
+import logging
 import os
 from datetime import datetime
 from urllib.parse import urlparse
 
 import requests
 import yaml
+from fastapi import Depends
+from sqlalchemy.orm import Session
 
 from app.models.category import Category
 from app.models.news import News
+from app.utils.db_manager import db_manager
+
+logger = logging.getLogger(__name__)
 
 NAVER_API_URL = 'https://openapi.naver.com/v1/search/news.json'
 NAVER_CLIENT_ID = os.getenv('NAVER_CLIENT_ID')
 NAVER_CLIENT_SECRET = os.getenv('NAVER_CLIENT_SECRET')
+
+yaml_path = os.path.join("/app/utils/news_provider_mapping.yaml")
+db_dependency = Depends(db_manager.get_db)
+
+with open(yaml_path, "r", encoding="utf-8") as file:
+    DOMAIN_TO_PROVIDER = yaml.safe_load(file)
+
+def get_subscribed_news_list(
+    limit: int = 10,
+    db: Session = db_dependency
+):
+    categories = db.query(Category).all()
+    saved_count = 0
+    for category in categories:
+        news_list = get_news_list_from_naver(category, limit)
+
+        for news in news_list:
+            exists = db.query(News).filter(News.news_id == news.news_id).first()
+            if not exists:
+                db.add(news)
+                saved_count += 1
+
+    db.commit()
+    logger.info(f"{saved_count}개의 뉴스 저장 완료")
 
 def get_news_list_from_naver(category: Category, display: int = 10, start: int = 1, sort: str = "date"):
     query = category.category_name
@@ -66,11 +96,6 @@ def parse_naver_news(json_data, category_id, category_name):
         news_list.append(news)
 
     return news_list
-
-yaml_path = os.path.join("/app/utils/news_provider_mapping.yaml")
-
-with open(yaml_path, "r", encoding="utf-8") as file:
-    DOMAIN_TO_PROVIDER = yaml.safe_load(file)
 
 # 언론사 추출 함수
 def map_news_source(source_url: str) -> str:
