@@ -12,7 +12,7 @@ load_dotenv()  # .env 파일 로딩
 
 # ✅ NCS 코드 → 카테고리 ID 매핑 (카테고리 11~35에 해당)
 NCS_CATEGORY_MAP = {
-    f"R6000{str(i).zfill(2)}": i for i in range(11, 36)
+    f"R6000{str(i).zfill(2)}": 10 + i for i in range(1, 26)
 }
 
 # HireType 코드 → hire_type_id 매핑 (미리 DB에 정의되어 있어야 함)
