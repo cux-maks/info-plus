@@ -12,7 +12,7 @@ load_dotenv()  # .env 파일 로딩
 
 # ✅ NCS 코드 → 카테고리 ID 매핑 (카테고리 11~35에 해당)
 NCS_CATEGORY_MAP = {
-    f"R6000{str(i).zfill(2)}": 10 + i for i in range(1, 26)
+    f"R6000{str(i).zfill(2)}": i for i in range(11, 36)
 }
 
 # HireType 코드 → hire_type_id 매핑 (미리 DB에 정의되어 있어야 함)
@@ -106,7 +106,7 @@ def fetch_and_insert_recent_jobs(days=1, db_session=None):
             recruit_id = int(job["recrutPblntSn"])
 
             # employee 테이블에 채용 공고 기본 정보 저장
-            new_employee = Employee(
+            merged_employee = Employee(
                 recruit_id=recruit_id,
                 title=job.get("recrutPbancTtl", ""),            # 공고 제목
                 institution=job.get("instNm", ""),               # 기관명
@@ -116,7 +116,7 @@ def fetch_and_insert_recent_jobs(days=1, db_session=None):
                 detail_url=f"https://opendata.alio.go.kr/recruit?sn={recruit_id}",  # 상세 URL
                 recrut_pblnt_sn=recruit_id                       # 공고번호
             )
-            db_session.add(new_employee)
+            db_session.merge(merged_employee)
 
             # employee_category 테이블에 연결 정보 저장 (NCS → category_id)
             for category_id in matched_category_ids:
