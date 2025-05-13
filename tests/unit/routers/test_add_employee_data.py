@@ -67,7 +67,7 @@ def test_fetch_and_insert_recent_jobs_success(mock_get, mock_db_session):
     inserted = fetch_and_insert_recent_jobs(days=1, db_session=mock_db_session)
 
     assert inserted == 4
-    assert mock_db_session.add.call_count == 17  # 4개의 공고 + 7개의 카테고리 + 6개의 고용형태
+    assert mock_db_session.add.call_count == 13  # 7개의 카테고리 + 6개의 고용형태 (4개의 공고는 이미 존재하므로 제외)
     mock_db_session.commit.assert_called_once()
 
 @patch("app.utils.insert_employee_data.requests.get")
