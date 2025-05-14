@@ -37,4 +37,4 @@ class Category(Base):
     feature = relationship("Feature", back_populates="category")
     user_category = relationship("UserCategory", back_populates="category")
     news = relationship("News", back_populates="category_rel")
-    employee = relationship("Employee", back_populates="category")
+    employee_categories = relationship("EmployeeCategory", back_populates="category")
