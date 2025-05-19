@@ -36,7 +36,7 @@ app.include_router(user_router, prefix="/user")
 app.include_router(employee_router, prefix="/employee")
 app.include_router(news_router, prefix="/news")
 app.include_router(feature_router, prefix="/feature")
-@app.get("/")
+@app.post("/")
 async def root():
     """루트 엔드포인트 핸들러.
     API 서버가 정상적으로 실행 중임을 확인하기 위한 기본 엔드포인트입니다.
