@@ -8,7 +8,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from app.models import Employee, UserCategory, Users
+from app.models import Employee, EmployeeCategory, UserCategory, Users
 from app.utils.db_manager import db_manager
 
 router = APIRouter()
@@ -56,10 +56,11 @@ def get_recruit_recommendations(
     # ✅ 3. 해당 카테고리의 채용 공고 조회
     jobs = (
         db.query(Employee)
-        .filter(Employee.category_id.in_(category_ids))
+        .join(EmployeeCategory, Employee.recruit_id == EmployeeCategory.recruit_id)
+        .filter(EmployeeCategory.category_id.in_(category_ids))
         .order_by(
-            Employee.start_date.desc(),   # 최신 시작일 우선
-            Employee.end_date.asc()       # 마감일이 빠를수록 우선
+            Employee.start_date.desc(),
+            Employee.end_date.asc()
         )
         .limit(limit)
         .all()

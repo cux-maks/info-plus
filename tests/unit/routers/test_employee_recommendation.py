@@ -19,7 +19,17 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import text
 
 from app.main import app
-from app.models import Base, Category, Employee, Feature, UserCategory, Users
+from app.models import (
+    Base,
+    Category,
+    Employee,
+    EmployeeCategory,
+    EmployeeHireType,
+    Feature,
+    HireType,
+    UserCategory,
+    Users,
+)
 from app.utils.db_manager import db_manager
 
 # 테스트용 SQLite 파일 DB (세션 유지)
@@ -79,34 +89,55 @@ def test_db(setup_database):
     db.commit()
     db.refresh(user_category)
 
-    # 채용 공고 추
+    hire_type = HireType(hire_type_id=1, hire_type_name="정규직", hire_type_code="R1010")
+    db.add(hire_type)
+    db.commit()
+    db.refresh(hire_type)
+
+    # 채용 공고 추가
     job1 = Employee(
-        recruit_id="rec1",
-        category_id=1,
+        recruit_id=1,
         title="AI 연구원",
         institution="OpenAI",
         start_date=datetime.date(2025, 4, 1),
         end_date=datetime.date(2025, 4, 30),
         recrut_se="R2030", # 신입 + 경력
-        hire_type_lst="R1040", # 비정규직
-        ncs_cd_lst="R600006", # 보건, 의료
         detail_url="https://example.com/openai",
         recrut_pblnt_sn=280271,
     )
     job2 = Employee(
-        recruit_id="rec2",
-        category_id=1,
+        recruit_id=2,
         title="AI 엔지니어",
         institution="Naver",
         start_date=datetime.date(2025, 4, 5),
         end_date=datetime.date(2025, 5, 5),
         recrut_se="R2010", # 신입
-        hire_type_lst="R1010", # 정규직
-        ncs_cd_lst="R600002", # 경영, 회계, 사무
         detail_url="https://example.com/naver",
         recrut_pblnt_sn=280272,
     )
     db.add_all([job1, job2])
+    db.commit()
+
+    employee_category1 = EmployeeCategory(
+        recruit_id=1,
+        category_id=1, # AI 카테고리
+        )
+    employee_category2 = EmployeeCategory(
+        recruit_id=2,
+        category_id=1, # AI 카테고리
+        )
+    db.add_all([employee_category1, employee_category2])
+    db.commit()
+
+    employee_hire_type1 = EmployeeHireType(
+        recruit_id=1,
+        hire_type_id=1, # 정규직
+        )
+    employee_hire_type2 = EmployeeHireType(
+        recruit_id=2,
+        hire_type_id=1, # 정규직
+        )
+    db.add_all([employee_hire_type1, employee_hire_type2])
     db.commit()
 
     yield db # 세션 제공
@@ -210,7 +241,10 @@ def test_recruit_recommendation_no_jobs(test_client: TestClient, test_db):
     """
     # 채용공고 전체 삭제
     db = test_db
+    db.query(EmployeeHireType).delete()
+    db.query(EmployeeCategory).delete()
     db.query(Employee).delete()
+    db.commit()
     db.commit()
 
     response = test_client.get("/employee/recommend", params={"user_id": "user123"})
