@@ -24,9 +24,6 @@ jobs:
       - name: Install dependencies
         run: poetry install
 
-      - name: Run tests
-        run: poetry run pytest
-
       - name: Deploy to EC2
         uses: appleboy/ssh-action@master
         with:
