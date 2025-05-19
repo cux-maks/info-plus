@@ -43,4 +43,15 @@ async def root():
     Returns:
         dict: 서버 상태 메시지를 포함하는 딕셔너리.
     """
-    return {"message": "KakaoTalk Chatbot API is running"}
+    return {
+        "version": "2.0",
+        "template": {
+            "outputs": [
+                {
+                    "simpleText": {
+                        "text": "안녕하세요. 테스트용 응답입니다."
+                    }
+                }
+            ]
+        }
+    }
