@@ -46,3 +46,15 @@ coverage.xml
 # Docker
 volumes/
 
+# AWS
+.aws/
+
+# AWS EC2
+.ssh/
+
+*.pem
+*.pub
+*.crt
+*.key
+*.csr
+*.crl
