@@ -83,13 +83,31 @@ def get_recruit_recommendations(
         "message": message
     }
 
-@router.get("/employee/search")
+@router.get("/DB_search")
 def search_employees(
-    user_id: str = Query(...),
-    q: str = Query(...),
-    limit: int = Query(10, ge=1, le=100),
+    user_id: str = Query(..., description="사용자 ID"),
+    q: str = Query(..., description="검색할 카테고리 키워드 (예: '정보통신', '디자인')"),
+    limit: int = Query(10, ge=1, le=100, description="검색 결과 최대 개수 (기본값: 10, 최대: 100)"),
     db: Session = Depends(db_manager.get_db)
 ):
+    """
+    사용자가 입력한 키워드를 기반으로 가장 유사한 카테고리를 찾고, 해당 카테고리에 속한 채용 공고를 반환합니다.
+
+    Args:
+        user_id (str): 검색을 수행할 사용자 ID.
+        q (str): 검색 키워드 (카테고리명).
+        limit (int): 반환할 채용 공고 수 (기본값: 10, 최대 100).
+        db (Session): 데이터베이스 세션 객체.
+
+    Returns:
+        dict: 매칭된 카테고리명과 해당 카테고리에 속한 채용 공고 목록.
+            - matched_category (str): 검색 키워드와 가장 유사한 카테고리명.
+            - results (List[dict]): 채용공고 목록 (제목, 기관, 시작일, 종료일, 상세 URL 포함).
+
+    Raises:
+        HTTPException 404: 사용자가 존재하지 않는 경우.
+        HTTPException 404: 키워드와 일치하는 카테고리를 찾을 수 없는 경우.
+    """
     user = db.query(Users).filter(Users.user_id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
