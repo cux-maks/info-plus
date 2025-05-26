@@ -7,13 +7,15 @@
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-
+from elasticsearch import Elasticsearch
 from app.models import Employee, EmployeeCategory, UserCategory, Users
 from app.utils.db_manager import db_manager
 
 router = APIRouter()
 db_dependency = Depends(db_manager.get_db)  # 전역 변수로 설정
 
+router = APIRouter()
+es = Elasticsearch("http://localhost:9200")
 
 @router.get("/recommend")
 def get_recruit_recommendations(
@@ -79,4 +81,61 @@ def get_recruit_recommendations(
     return {
         "results": jobs,
         "message": message
+    }
+
+@router.get("/employee/search")
+def search_employees(
+    user_id: str = Query(...),
+    q: str = Query(...),
+    limit: int = Query(10, ge=1, le=100),
+    db: Session = Depends(db_manager.get_db)
+):
+    user = db.query(Users).filter(Users.user_id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    es_result = es.search(
+        index="categories",
+        body={
+            "size": 1,
+            "query": {
+                "match": {
+                    "category_name": {
+                        "query": q,
+                        "fuzziness": "AUTO"
+                    }
+                }
+            }
+        }
+    )
+
+    hits = es_result.get("hits", {}).get("hits", [])
+    if not hits:
+        raise HTTPException(status_code=404, detail="No matching category found")
+
+    matched_category = hits[0]["_source"]["category_name"]
+    category_id = hits[0]["_source"]["category_id"]
+
+    jobs = (
+        db.query(Employee)
+        .filter(Employee.category_id == category_id)
+        .order_by(Employee.start_date.desc())
+        .limit(limit)
+        .all()
+    )
+
+    results = [
+        {
+            "title": job.title,
+            "organization": job.organization,
+            "start_date": job.start_date,
+            "end_date": job.end_date,
+            "url": job.url
+        }
+        for job in jobs
+    ]
+
+    return {
+        "matched_category": matched_category,
+        "results": results
     }
