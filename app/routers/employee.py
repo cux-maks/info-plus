@@ -108,40 +108,47 @@ def search_employees(
         HTTPException 404: 사용자가 존재하지 않는 경우.
         HTTPException 404: 키워드와 일치하는 카테고리를 찾을 수 없는 경우.
     """
+
+    # ✅ 1. 사용자 존재 여부 확인
     user = db.query(Users).filter(Users.user_id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
+    # ✅ 2. Elasticsearch를 이용해 유사한 카테고리 검색 (fuzzy match)
     es_result = es.search(
-        index="categories",
+        index="categories",  # 검색할 인덱스명
         body={
-            "size": 1,
+            "size": 1,  # 가장 유사한 하나의 결과만 추출
             "query": {
                 "match": {
                     "category_name": {
                         "query": q,
-                        "fuzziness": "AUTO"
+                        "fuzziness": "AUTO"  # 철자 오류 등 유사어 허용
                     }
                 }
             }
         }
     )
 
+    # ✅ 3. 검색 결과가 없으면 예외 처리
     hits = es_result.get("hits", {}).get("hits", [])
     if not hits:
         raise HTTPException(status_code=404, detail="No matching category found")
 
+    # ✅ 4. 검색 결과에서 카테고리명과 ID 추출
     matched_category = hits[0]["_source"]["category_name"]
     category_id = hits[0]["_source"]["category_id"]
 
+    # ✅ 5. 해당 카테고리에 속한 채용 공고를 최신순으로 조회
     jobs = (
         db.query(Employee)
         .filter(Employee.category_id == category_id)
-        .order_by(Employee.start_date.desc())
+        .order_by(Employee.start_date.desc())  # 시작일 기준 최신순 정렬
         .limit(limit)
         .all()
     )
 
+    # ✅ 6. 결과를 JSON 형태로 정리
     results = [
         {
             "title": job.title,
@@ -153,6 +160,7 @@ def search_employees(
         for job in jobs
     ]
 
+    # ✅ 7. 최종 응답 반환
     return {
         "matched_category": matched_category,
         "results": results
