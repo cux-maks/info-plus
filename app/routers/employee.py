@@ -8,6 +8,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from elasticsearch import Elasticsearch
+import os
 from app.models import Employee, EmployeeCategory, UserCategory, Users
 from app.utils.db_manager import db_manager
 
@@ -15,7 +16,7 @@ router = APIRouter()
 db_dependency = Depends(db_manager.get_db)  # 전역 변수로 설정
 
 router = APIRouter()
-es = Elasticsearch("http://localhost:9200")
+es = Elasticsearch(os.getenv("ES_HOST", "http://elasticsearch:9200"))
 
 @router.get("/recommend")
 def get_recruit_recommendations(
@@ -114,23 +115,28 @@ def search_employees(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # ✅ 2. Elasticsearch를 이용해 유사한 카테고리 검색 (fuzzy match)
-    es_result = es.search(
-        index="categories",  # 검색할 인덱스명
-        body={
-            "size": 1,  # 가장 유사한 하나의 결과만 추출
-            "query": {
-                "match": {
-                    "category_name": {
-                        "query": q,
-                        "fuzziness": "AUTO"  # 철자 오류 등 유사어 허용
+    # ✅ 2. Elasticsearch 유사 카테고리 검색
+    try:
+        es_result = es.search(
+            index="categories",
+            body={
+                "size": 1,
+                "query": {
+                    "match": {
+                        "category_name": {
+                            "query": q,
+                            "fuzziness": "AUTO"
+                        }
                     }
                 }
             }
-        }
-    )
+        )
+    except ConnectionError:
+        raise HTTPException(status_code=500, detail="Elasticsearch 연결 실패")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-    # ✅ 3. 검색 결과가 없으면 예외 처리
+    # ✅ 3. 검색 결과 확인
     hits = es_result.get("hits", {}).get("hits", [])
     if not hits:
         raise HTTPException(status_code=404, detail="No matching category found")
@@ -142,8 +148,9 @@ def search_employees(
     # ✅ 5. 해당 카테고리에 속한 채용 공고를 최신순으로 조회
     jobs = (
         db.query(Employee)
-        .filter(Employee.category_id == category_id)
-        .order_by(Employee.start_date.desc())  # 시작일 기준 최신순 정렬
+        .join(EmployeeCategory, Employee.recruit_id == EmployeeCategory.recruit_id)
+        .filter(EmployeeCategory.category_id == category_id)
+        .order_by(Employee.start_date.desc())
         .limit(limit)
         .all()
     )
@@ -151,11 +158,11 @@ def search_employees(
     # ✅ 6. 결과를 JSON 형태로 정리
     results = [
         {
-            "title": job.title,
-            "organization": job.organization,
-            "start_date": job.start_date,
-            "end_date": job.end_date,
-            "url": job.url
+            "title": job.title,             
+            "organization": job.institution, 
+            "start_date": job.start_date.isoformat(),  # date → 문자열 (ISO 포맷)
+            "end_date": job.end_date.isoformat(),
+            "url": job.detail_url          
         }
         for job in jobs
     ]

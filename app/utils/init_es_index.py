@@ -13,7 +13,6 @@ CATEGORIES = [
     {"category_id": 8, "category_name": "사회", "feature": "news"},
     {"category_id": 9, "category_name": "생활/문화", "feature": "news"},
     {"category_id": 10, "category_name": "세계", "feature": "news"},
-
     {"category_id": 11, "category_name": "사업관리", "feature": "employee"},
     {"category_id": 12, "category_name": "경영·회계·사무", "feature": "employee"},
     {"category_id": 13, "category_name": "금융·보험", "feature": "employee"},
@@ -45,15 +44,40 @@ def create_category_index():
     if es.indices.exists(index="categories"):
         es.indices.delete(index="categories")
 
-    es.indices.create(index="categories", body={
+    index_body = {
+        "settings": {
+            "analysis": {
+                "tokenizer": {
+                    "edge_ngram_tokenizer": {
+                        "type": "edge_ngram",
+                        "min_gram": 2,
+                        "max_gram": 10,
+                        "token_chars": ["letter", "digit"]
+                    }
+                },
+                "analyzer": {
+                    "autocomplete": {
+                        "type": "custom",
+                        "tokenizer": "edge_ngram_tokenizer",
+                        "filter": ["lowercase"]
+                    }
+                }
+            }
+        },
         "mappings": {
             "properties": {
                 "category_id": {"type": "integer"},
-                "category_name": {"type": "text"},
+                "category_name": {
+                    "type": "text",
+                    "analyzer": "autocomplete",  # 색인 시 edge_ngram 기반 분석
+                    "search_analyzer": "standard"  # 검색 시 표준 분석기 사용
+                },
                 "feature": {"type": "keyword"}
             }
         }
-    })
+    }
+
+    es.indices.create(index="categories", body=index_body)
 
     for cat in CATEGORIES:
         es.index(index="categories", document=cat)
