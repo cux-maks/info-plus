@@ -137,13 +137,14 @@ def search_employees(
 
     # ✅ 3. 검색 결과 확인
     hits = es_result.get("hits", {}).get("hits", [])
-    if not hits:
-        matched_category = "기타"
-        category_id = 0
-    else:
+    if hits:
         matched_source = hits[0]["_source"]
         matched_category = matched_source["category_name"]
         category_id = matched_source["category_id"]
+    else:
+        # 기본 카테고리 설정 (예: category_id=0, 기타)
+        matched_category = "기타"
+        category_id = 0
 
     # ✅ 4. 해당 카테고리에 속한 채용 공고를 최신순으로 조회
     jobs = (
