@@ -87,7 +87,7 @@ def get_recruit_recommendations(
 @router.get("/DB_search")
 def search_employees(
     user_id: str = Query(..., description="사용자 ID"),
-    q: str = Query(..., description="검색할 카테고리 키워드 (예: '정보통신', '디자인')"),
+    keyword: str = Query(..., description="검색할 카테고리 키워드 (예: '정보통신', '디자인')"),
     limit: int = Query(10, ge=1, le=100, description="검색 결과 최대 개수 (기본값: 10, 최대: 100)"),
     db: Session = Depends(db_manager.get_db)
 ):
@@ -122,9 +122,9 @@ def search_employees(
             body={
                 "size": 1,
                 "query": {
-                    "match": {
+                    "match_phrase_prefix": {
                         "category_name": {
-                            "query": q,
+                            "query": keyword,
                             "fuzziness": "AUTO"
                         }
                     }
@@ -138,8 +138,14 @@ def search_employees(
 
     # ✅ 3. 검색 결과 확인
     hits = es_result.get("hits", {}).get("hits", [])
-    if not hits:
-        raise HTTPException(status_code=404, detail="No matching category found")
+    if hits:
+        matched_source = hits[0]["_source"]
+        matched_category = matched_source["category_name"]
+        category_id = matched_source["category_id"]
+    else:
+        # 기본 카테고리 설정 (예: category_id=0, 기타)
+        matched_category = "기타"
+        category_id = 0
 
     # ✅ 4. 검색 결과에서 카테고리명과 ID 추출
     matched_category = hits[0]["_source"]["category_name"]
