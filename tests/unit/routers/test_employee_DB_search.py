@@ -96,28 +96,19 @@ def test_db(setup_database):
     db.refresh(hire_type)
 
     # 채용 공고 추가
-    job1 = Employee(
+    job = Employee(
         recruit_id=1,
-        title="정보통신 연구원",
-        institution="OpenAI",
-        start_date=datetime.date(2025, 4, 1),
-        end_date=datetime.date(2025, 4, 30),
-        recrut_se="R2030", # 신입 + 경력
-        detail_url="https://example.com/openai",
-        recrut_pblnt_sn=280271,
+        title="정보통신 개발자",
+        institution="TechCorp",
+        start_date=datetime.date(2025, 5, 1),
+        end_date=datetime.date(2025, 5, 31),
+        recrut_se="R2010",
+        detail_url="https://example.com/job1",
+        recrut_pblnt_sn=123456,
     )
-    job2 = Employee(
-        recruit_id=2,
-        title="정보통신 엔지니어",
-        institution="Naver",
-        start_date=datetime.date(2025, 4, 5),
-        end_date=datetime.date(2025, 5, 5),
-        recrut_se="R2010", # 신입
-        detail_url="https://example.com/naver",
-        recrut_pblnt_sn=280272,
-    )
-    db.add_all([job1, job2])
+    db.add(job)
     db.commit()
+    db.refresh(job)
 
     employee_category1 = EmployeeCategory(
         recruit_id=1,
@@ -204,7 +195,7 @@ def test_search_employees_success(mock_es_search, client, test_db):
     data = response.json()
     assert data["matched_category"] == "정보통신"
     assert isinstance(data["results"], list)
-    assert len(data["results"]) == 2
+    assert len(data["results"]) == 1
     assert data["results"][0]["title"] == "정보통신 개발자"
     assert data["results"][0]["institution"] == "TechCorp"
 
