@@ -169,7 +169,7 @@ def search_employees(
     results = [
         {
             "title": job.title,             
-            "organization": job.institution, 
+            "institution": job.institution, 
             "start_date": job.start_date.isoformat(),  # date → 문자열 (ISO 포맷)
             "end_date": job.end_date.isoformat(),
             "url": job.detail_url          
