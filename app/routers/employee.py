@@ -122,9 +122,18 @@ def search_employees(
             body={
                 "size": 1,
                 "query": {
-                    "match_phrase_prefix": {
-                        "category_name": {
-                            "query": keyword
+                    "bool": {
+                        "must": {
+                            "match_phrase_prefix": {
+                                "category_name": {
+                                    "query": keyword
+                                }
+                            }
+                        },
+                        "filter": {
+                            "term": {
+                                "feature": "employee"  # ✅ 'employee' 기능 카테고리만 필터링
+                            }
                         }
                     }
                 }
