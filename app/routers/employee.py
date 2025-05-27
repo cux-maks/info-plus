@@ -124,8 +124,7 @@ def search_employees(
                 "query": {
                     "match_phrase_prefix": {
                         "category_name": {
-                            "query": keyword,
-                            "fuzziness": "AUTO"
+                            "query": keyword
                         }
                     }
                 }
@@ -138,20 +137,15 @@ def search_employees(
 
     # ✅ 3. 검색 결과 확인
     hits = es_result.get("hits", {}).get("hits", [])
-    if hits:
+    if not hits:
+        matched_category = "기타"
+        category_id = 0
+    else:
         matched_source = hits[0]["_source"]
         matched_category = matched_source["category_name"]
         category_id = matched_source["category_id"]
-    else:
-        # 기본 카테고리 설정 (예: category_id=0, 기타)
-        matched_category = "기타"
-        category_id = 0
 
-    # ✅ 4. 검색 결과에서 카테고리명과 ID 추출
-    matched_category = hits[0]["_source"]["category_name"]
-    category_id = hits[0]["_source"]["category_id"]
-
-    # ✅ 5. 해당 카테고리에 속한 채용 공고를 최신순으로 조회
+    # ✅ 4. 해당 카테고리에 속한 채용 공고를 최신순으로 조회
     jobs = (
         db.query(Employee)
         .join(EmployeeCategory, Employee.recruit_id == EmployeeCategory.recruit_id)
@@ -161,7 +155,7 @@ def search_employees(
         .all()
     )
 
-    # ✅ 6. 결과를 JSON 형태로 정리
+    # ✅ 5. 결과를 JSON 형태로 정리
     results = [
         {
             "title": job.title,             
@@ -173,7 +167,7 @@ def search_employees(
         for job in jobs
     ]
 
-    # ✅ 7. 최종 응답 반환
+    # ✅ 6. 최종 응답 반환
     return {
         "matched_category": matched_category,
         "results": results
