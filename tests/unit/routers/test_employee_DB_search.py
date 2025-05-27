@@ -27,8 +27,10 @@ from app.models import (
     EmployeeCategory,
     Feature,
     Users,
+    HireType,
+    EmployeeHireType,
 )
-from app.utils import db_manager
+from app.utils.db_manager import db_manager
 
 # 테스트용 SQLite DB 설정
 TEST_DATABASE_URL = "sqlite:///./test.db"
@@ -67,9 +69,8 @@ def test_db(setup_database):
         Session: 테스트용 SQLAlchemy DB 세션
     """
     db = TestingSessionLocal()
+
     # 기존 데이터 삭제
-    db.query(EmployeeCategory).delete()
-    db.query(Employee).delete()
     db.query(Category).delete()
     db.query(Feature).delete()
     db.query(Users).delete()
@@ -80,37 +81,72 @@ def test_db(setup_database):
     feature = Feature(feature_type="employee")
     db.add_all([user, feature])
     db.commit()
+
     db.refresh(user)
     db.refresh(feature)
 
-    category = Category(feature_id=feature.id, category_name="정보통신")
+    category = Category(feature_id=1, category_name="정보통신")
     db.add(category)
     db.commit()
     db.refresh(category)
 
-    job = Employee(
+    hire_type = HireType(hire_type_id=1, hire_type_name="정규직", hire_type_code="R1010")
+    db.add(hire_type)
+    db.commit()
+    db.refresh(hire_type)
+
+    # 채용 공고 추가
+    job1 = Employee(
         recruit_id=1,
-        title="정보통신 개발자",
-        institution="TechCorp",
-        start_date=datetime.date(2025, 5, 1),
-        end_date=datetime.date(2025, 5, 31),
-        recrut_se="R2010",
-        detail_url="https://example.com/job1",
-        recrut_pblnt_sn=123456,
+        title="정보통신 연구원",
+        institution="OpenAI",
+        start_date=datetime.date(2025, 4, 1),
+        end_date=datetime.date(2025, 4, 30),
+        recrut_se="R2030", # 신입 + 경력
+        detail_url="https://example.com/openai",
+        recrut_pblnt_sn=280271,
     )
-    db.add(job)
+    job2 = Employee(
+        recruit_id=2,
+        title="정보통신 엔지니어",
+        institution="Naver",
+        start_date=datetime.date(2025, 4, 5),
+        end_date=datetime.date(2025, 5, 5),
+        recrut_se="R2010", # 신입
+        detail_url="https://example.com/naver",
+        recrut_pblnt_sn=280272,
+    )
+    db.add_all([job1, job2])
     db.commit()
-    db.refresh(job)
 
-    emp_cat = EmployeeCategory(recruit_id=job.recruit_id, category_id=category.id)
-    db.add(emp_cat)
+    employee_category1 = EmployeeCategory(
+        recruit_id=1,
+        category_id=1, # AI 카테고리
+        )
+    employee_category2 = EmployeeCategory(
+        recruit_id=2,
+        category_id=1, # AI 카테고리
+        )
+    db.add_all([employee_category1, employee_category2])
     db.commit()
 
-    yield db
+    employee_hire_type1 = EmployeeHireType(
+        recruit_id=1,
+        hire_type_id=1, # 정규직
+        )
+    employee_hire_type2 = EmployeeHireType(
+        recruit_id=2,
+        hire_type_id=1, # 정규직
+        )
+    db.add_all([employee_hire_type1, employee_hire_type2])
+    db.commit()
 
-    db.rollback()
-    db.close()
-    Base.metadata.drop_all(bind=engine)
+    yield db # 세션 제공
+
+    db.commit()
+    db.rollback()  # 테스트 종료 후 변경 사항 되돌리기
+    db.close()  # 세션 종료
+    Base.metadata.drop_all(bind=engine)  # 테스트 끝나면 DB 초기화
 
 def override_get_db():
     """
@@ -141,7 +177,7 @@ def client():
     return TestClient(app)
 
 # 🔹 정상 검색 테스트
-@patch("app.routers.your_router.es.search")  # es.search 함수 패치 (실제 ES 호출 방지)
+@patch("app.routers.employee.es.search")  # es.search 함수 패치 (실제 ES 호출 방지)
 def test_search_employees_success(mock_es_search, client, test_db):
     """
     Elasticsearch에서 정상적으로 카테고리 검색 결과를 받아
@@ -162,13 +198,13 @@ def test_search_employees_success(mock_es_search, client, test_db):
         }
     }
 
-    response = client.get("/DB_search", params={"user_id": "user123", "keyword": "정보통신", "limit": 5})
+    response = client.get("/employee/DB_search", params={"user_id": "user123", "keyword": "정보통신", "limit": 5})
     assert response.status_code == 200
 
     data = response.json()
     assert data["matched_category"] == "정보통신"
     assert isinstance(data["results"], list)
-    assert len(data["results"]) == 1
+    assert len(data["results"]) == 2
     assert data["results"][0]["title"] == "정보통신 개발자"
     assert data["results"][0]["institution"] == "TechCorp"
 
@@ -178,12 +214,12 @@ def test_search_employees_user_not_found(client):
     존재하지 않는 사용자 ID로 검색 요청 시
     404 에러 및 'User not found' 메시지가 반환되는지 확인합니다.
     """
-    response = client.get("/DB_search", params={"user_id": "unknown", "keyword": "정보통신"})
+    response = client.get("/employee/DB_search", params={"user_id": "unknown", "keyword": "정보통신"})
     assert response.status_code == 404
     assert response.json() == {"detail": "User not found"}
 
 # 🔹 Elasticsearch에서 카테고리 미검색 시 기본값 처리 테스트
-@patch("app.routers.your_router.es.search")
+@patch("app.routers.employee.es.search")
 def test_search_employees_no_category_found(mock_es_search, client, test_db):
     """
     Elasticsearch에서 키워드에 해당하는 카테고리가 검색되지 않을 때
@@ -191,7 +227,7 @@ def test_search_employees_no_category_found(mock_es_search, client, test_db):
     """
     mock_es_search.return_value = {"hits": {"hits": []}}  # 검색 결과 없음
 
-    response = client.get("/DB_search", params={"user_id": "user123", "keyword": "없는카테고리"})
+    response = client.get("/employee/DB_search", params={"user_id": "user123", "keyword": "없는카테고리"})
     assert response.status_code == 200
     data = response.json()
     assert data["matched_category"] == "기타"
@@ -199,7 +235,7 @@ def test_search_employees_no_category_found(mock_es_search, client, test_db):
     assert len(data["results"]) == 0  # 기본 category_id=0 이므로 관련 공고 없음
 
 # 🔹 해당 카테고리에 채용 공고가 없을 경우
-@patch("app.routers.your_router.es.search")
+@patch("app.routers.employee.es.search")
 def test_search_employees_no_jobs_in_category(mock_es_search, client, test_db):
     """
     검색된 카테고리는 존재하나 해당 카테고리에 등록된 채용 공고가 없을 때
@@ -220,7 +256,7 @@ def test_search_employees_no_jobs_in_category(mock_es_search, client, test_db):
         }
     }
 
-    response = client.get("/DB_search", params={"user_id": "user123", "keyword": "정보통신"})
+    response = client.get("/employee/DB_search", params={"user_id": "user123", "keyword": "정보통신"})
     assert response.status_code == 200
     data = response.json()
     assert data["matched_category"] == "정보통신"
@@ -228,7 +264,7 @@ def test_search_employees_no_jobs_in_category(mock_es_search, client, test_db):
     assert len(data["results"]) == 0
 
 # 🔹 limit 파라미터 테스트 (최대 100, 기본 10 등)
-@patch("app.routers.your_router.es.search")
+@patch("app.routers.employee.es.search")
 def test_search_employees_limit_param(mock_es_search, client, test_db):
     """
     검색 시 limit 파라미터의 기본값, 지정값, 최대값 초과 시
@@ -252,38 +288,38 @@ def test_search_employees_limit_param(mock_es_search, client, test_db):
     }
 
     # 기본 limit=10
-    response = client.get("/DB_search", params={"user_id": "user123", "keyword": "정보통신"})
+    response = client.get("/employee/DB_search", params={"user_id": "user123", "keyword": "정보통신"})
     assert response.status_code == 200
 
     # limit=1 지정
-    response = client.get("/DB_search", params={"user_id": "user123", "keyword": "정보통신", "limit": 1})
+    response = client.get("/employee/DB_search", params={"user_id": "user123", "keyword": "정보통신", "limit": 1})
     assert response.status_code == 200
     data = response.json()
     assert len(data["results"]) <= 1
 
     # limit가 최대 100 초과 시도 (FastAPI에서 자동 검증되어 422 에러가 발생할 것)
-    response = client.get("/DB_search", params={"user_id": "user123", "keyword": "정보통신", "limit": 101})
+    response = client.get("/employee/DB_search", params={"user_id": "user123", "keyword": "정보통신", "limit": 101})
     assert response.status_code == 422  # 유효성 검증 실패
 
 
 # 🔹 Elasticsearch 연결 실패 예외 테스트
-@patch("app.routers.your_router.es.search", side_effect=ConnectionError)
+@patch("app.routers.employee.es.search", side_effect=ConnectionError)
 def test_search_employees_es_connection_error(mock_es_search, client, test_db):
     """
     Elasticsearch 연결 실패 시
     500 에러와 'Elasticsearch 연결 실패' 메시지가 반환되는지 확인합니다.
     """
-    response = client.get("/DB_search", params={"user_id": "user123", "keyword": "정보통신"})
+    response = client.get("/employee/DB_search", params={"user_id": "user123", "keyword": "정보통신"})
     assert response.status_code == 500
     assert response.json() == {"detail": "Elasticsearch 연결 실패"}
 
 # 🔹 Elasticsearch 기타 예외 테스트
-@patch("app.routers.your_router.es.search", side_effect=Exception("ES 오류"))
+@patch("app.routers.employee.es.search", side_effect=Exception("ES 오류"))
 def test_search_employees_es_other_error(mock_es_search, client, test_db):
     """
     Elasticsearch 검색 중 알 수 없는 예외 발생 시
     500 에러와 예외 메시지가 포함된 응답이 반환되는지 검증합니다.
     """
-    response = client.get("/DB_search", params={"user_id": "user123", "keyword": "정보통신"})
+    response = client.get("/employee/DB_search", params={"user_id": "user123", "keyword": "정보통신"})
     assert response.status_code == 500
     assert "ES 오류" in response.json()["detail"]

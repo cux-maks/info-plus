@@ -14,8 +14,6 @@ from app.utils.db_manager import db_manager
 
 router = APIRouter()
 db_dependency = Depends(db_manager.get_db)  # 전역 변수로 설정
-
-router = APIRouter()
 es = Elasticsearch(os.getenv("ES_HOST", "http://elasticsearch:9200"))
 
 @router.get("/recommend")
