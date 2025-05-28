@@ -117,10 +117,9 @@ def search_employees(
 
     # ✅ 2. Elasticsearch 유사 카테고리 검색
     try:
-        embedding = model.encode(keyword).tolist()  # 검색어 임베딩 벡터 생성
-
+        embedding = model.encode(keyword).tolist()
         es_result = es.search(
-            index="categories",  # 벡터 임베딩이 저장된 Elasticsearch 인덱스
+            index="categories",
             body={
                 "size": 1,
                 "query": {
@@ -129,13 +128,13 @@ def search_employees(
                             "bool": {
                                 "filter": {
                                     "term": {
-                                        "feature": "employee"  # 'employee' 기능 카테고리만 필터링
+                                        "feature": "employee"
                                     }
                                 }
                             }
                         },
                         "script": {
-                            "source": "cosineSimilarity(params.query_vector, 'category_vector') + 1.0",
+                            "source": "cosineSimilarity(params.query_vector, 'embedding') + 1.0",
                             "params": {
                                 "query_vector": embedding
                             }
