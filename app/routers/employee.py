@@ -127,11 +127,10 @@ def search_employees(
                     "script_score": {
                         "query": {
                             "bool": {
-                                "filter": {
-                                    "term": {
-                                        "feature": "employee"
-                                    }
-                                }
+                                "filter": [
+                                    {"exists": {"field": "category_vector"}},
+                                    {"term": {"feature": "employee"}}
+                                ]
                             }
                         },
                         "script": {
