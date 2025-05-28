@@ -8,7 +8,7 @@ model = SentenceTransformer("all-MiniLM-L6-v2")
 es = Elasticsearch("http://localhost:9200")
 
 # 인덱스명
-INDEX_NAME = "category_index"
+INDEX_NAME = "categories"
 
 # 카테고리 목록
 CATEGORIES = [

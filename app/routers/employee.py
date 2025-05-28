@@ -118,6 +118,7 @@ def search_employees(
     # ✅ 2. Elasticsearch 유사 카테고리 검색
     try:
         embedding = model.encode(keyword).tolist()
+        print("쿼리 벡터 차원:", len(embedding))  # 384가 나와야 정상
         es_result = es.search(
             index="categories",
             body={
@@ -146,6 +147,8 @@ def search_employees(
     except ConnectionError:
         raise HTTPException(status_code=500, detail="Elasticsearch 연결 실패")
     except Exception as e:
+        print("Elasticsearch 검색 중 에러 발생:", str(e))  # 로그 확인용
+        print("상세 에러:", getattr(e, "info", None))  # 또는 e.body
         raise HTTPException(status_code=500, detail=str(e))
 
     # ✅ 3. 검색 결과 확인
