@@ -134,7 +134,7 @@ def search_employees(
                             }
                         },
                         "script": {
-                            "source": "cosineSimilarity(params.query_vector, 'embedding') + 1.0",
+                            "source": "cosineSimilarity(params.query_vector, 'category_vector') + 1.0",
                             "params": {
                                 "query_vector": embedding
                             }
