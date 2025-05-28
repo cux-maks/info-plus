@@ -1,7 +1,16 @@
+from sentence_transformers import SentenceTransformer
 from elasticsearch import Elasticsearch
 
+# 모델 로드 (384차원 벡터 출력)
+model = SentenceTransformer("all-MiniLM-L6-v2")
+
+# Elasticsearch 연결
 es = Elasticsearch("http://localhost:9200")
 
+# 인덱스명
+INDEX_NAME = "category_index"
+
+# 카테고리 목록
 CATEGORIES = [
     {"category_id": 1, "category_name": "IT/과학", "feature": "news"},
     {"category_id": 2, "category_name": "마케팅", "feature": "news"},
@@ -41,46 +50,60 @@ CATEGORIES = [
 ]
 
 def create_category_index():
-    if es.indices.exists(index="categories"):
-        es.indices.delete(index="categories")
+    # 인덱스 존재 시 삭제
+    if es.indices.exists(index=INDEX_NAME):
+        es.indices.delete(index=INDEX_NAME)
 
-    index_body = {
-        "settings": {
-            "analysis": {
-                "tokenizer": {
-                    "edge_ngram_tokenizer": {
-                        "type": "edge_ngram",
-                        "min_gram": 2,
-                        "max_gram": 10,
-                        "token_chars": ["letter", "digit"]
+    # 인덱스 생성
+    es.indices.create(
+        index=INDEX_NAME,
+        body={
+            "settings": {
+                "analysis": {
+                    "tokenizer": {
+                        "edge_ngram_tokenizer": {
+                            "type": "edge_ngram",
+                            "min_gram": 1,
+                            "max_gram": 20,
+                            "token_chars": ["letter", "digit"]
+                        }
+                    },
+                    "analyzer": {
+                        "edge_ngram_analyzer": {
+                            "tokenizer": "edge_ngram_tokenizer",
+                            "filter": ["lowercase"]
+                        }
                     }
-                },
-                "analyzer": {
-                    "autocomplete": {
-                        "type": "custom",
-                        "tokenizer": "edge_ngram_tokenizer",
-                        "filter": ["lowercase"]
+                }
+            },
+            "mappings": {
+                "properties": {
+                    "category_id": {"type": "integer"},
+                    "feature": {"type": "keyword"},
+                    "category_name": {
+                        "type": "text",
+                        "analyzer": "edge_ngram_analyzer",
+                        "search_analyzer": "standard"
+                    },
+                    "category_vector": {
+                        "type": "dense_vector",
+                        "dims": 384,
+                        "index": True,
+                        "similarity": "cosine"
                     }
                 }
             }
-        },
-        "mappings": {
-            "properties": {
-                "category_id": {"type": "integer"},
-                "category_name": {
-                    "type": "text",
-                    "analyzer": "autocomplete",  # 색인 시 edge_ngram 기반 분석
-                    "search_analyzer": "standard"  # 검색 시 표준 분석기 사용
-                },
-                "feature": {"type": "keyword"}
-            }
         }
-    }
+    )
 
-    es.indices.create(index="categories", body=index_body)
-
+    # 색인
     for cat in CATEGORIES:
-        es.index(index="categories", document=cat)
+        embedding = model.encode(cat["category_name"]).tolist()
+        doc = {
+            **cat,
+            "category_vector": embedding
+        }
+        es.index(index=INDEX_NAME, document=doc)
 
 if __name__ == "__main__":
     create_category_index()

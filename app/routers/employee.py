@@ -7,6 +7,7 @@
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from sentence_transformers import SentenceTransformer
 from elasticsearch import Elasticsearch
 import os
 from app.models import Employee, EmployeeCategory, UserCategory, Users
@@ -15,6 +16,7 @@ from app.utils.db_manager import db_manager
 router = APIRouter()
 db_dependency = Depends(db_manager.get_db)  # 전역 변수로 설정
 es = Elasticsearch(os.getenv("ES_HOST", "http://elasticsearch:9200"))
+model = SentenceTransformer("all-MiniLM-L6-v2")
 
 @router.get("/recommend")
 def get_recruit_recommendations(
@@ -115,22 +117,27 @@ def search_employees(
 
     # ✅ 2. Elasticsearch 유사 카테고리 검색
     try:
+        embedding = model.encode(keyword).tolist()  # 검색어 임베딩 벡터 생성
+
         es_result = es.search(
-            index="categories",
+            index="categories",  # 벡터 임베딩이 저장된 Elasticsearch 인덱스
             body={
                 "size": 1,
                 "query": {
-                    "bool": {
-                        "must": {
-                            "match_phrase_prefix": {
-                                "category_name": {
-                                    "query": keyword
+                    "script_score": {
+                        "query": {
+                            "bool": {
+                                "filter": {
+                                    "term": {
+                                        "feature": "employee"  # 'employee' 기능 카테고리만 필터링
+                                    }
                                 }
                             }
                         },
-                        "filter": {
-                            "term": {
-                                "feature": "employee"  # ✅ 'employee' 기능 카테고리만 필터링
+                        "script": {
+                            "source": "cosineSimilarity(params.query_vector, 'category_vector') + 1.0",
+                            "params": {
+                                "query_vector": embedding
                             }
                         }
                     }
