@@ -110,26 +110,18 @@ def test_db(setup_database):
     db.commit()
     db.refresh(job)
 
-    employee_category1 = EmployeeCategory(
+    employee_category = EmployeeCategory(
         recruit_id=1,
         category_id=1, # AI 카테고리
         )
-    employee_category2 = EmployeeCategory(
-        recruit_id=2,
-        category_id=1, # AI 카테고리
-        )
-    db.add_all([employee_category1, employee_category2])
+    db.add(employee_category)
     db.commit()
 
-    employee_hire_type1 = EmployeeHireType(
+    employee_hire_type = EmployeeHireType(
         recruit_id=1,
         hire_type_id=1, # 정규직
         )
-    employee_hire_type2 = EmployeeHireType(
-        recruit_id=2,
-        hire_type_id=1, # 정규직
-        )
-    db.add_all([employee_hire_type1, employee_hire_type2])
+    db.add(employee_hire_type)
     db.commit()
 
     yield db # 세션 제공
@@ -200,7 +192,7 @@ def test_search_employees_success(mock_es_search, client, test_db):
     assert data["results"][0]["institution"] == "TechCorp"
 
 # 🔹 사용자 미존재 테스트
-def test_search_employees_user_not_found(client):
+def test_search_employees_user_not_found(client, setup_database):
     """
     존재하지 않는 사용자 ID로 검색 요청 시
     404 에러 및 'User not found' 메시지가 반환되는지 확인합니다.
