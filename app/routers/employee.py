@@ -8,15 +8,29 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sentence_transformers import SentenceTransformer
+from huggingface_hub import login
 from elasticsearch import Elasticsearch
 import os
+from dotenv import load_dotenv
 from app.models import Employee, EmployeeCategory, UserCategory, Users
 from app.utils.db_manager import db_manager
 
 router = APIRouter()
 db_dependency = Depends(db_manager.get_db)  # 전역 변수로 설정
-es = Elasticsearch(os.getenv("ES_HOST", "http://elasticsearch:9200"))
+
+# 환경변수 로딩
+load_dotenv()
+hf_token = os.getenv("HUGGINGFACE_TOKEN")
+
+# Hugging Face 로그인 (모델 로딩 전)
+if hf_token:
+    login(token=hf_token)
+
+# 모델 로드 (384차원 벡터 출력)
 model = SentenceTransformer("all-MiniLM-L6-v2")
+
+# Elasticsearch 연결
+es = Elasticsearch(os.getenv("ES_HOST", "http://elasticsearch:9200"))
 
 @router.get("/recommend")
 def get_recruit_recommendations(
