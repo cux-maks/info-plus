@@ -98,6 +98,24 @@ def get_recruit_recommendations(
         "message": message
     }
 
+def filter_top_categories(similarity_results, min_score=0.6, top_n=5):
+    """
+    유사도 결과 필터링
+    - min_score 이상
+    - top_n 중 평균 이상
+    """
+    top_results = similarity_results[:top_n]
+    if not top_results:
+        return []
+
+    avg_score = sum([item["score"] for item in top_results]) / len(top_results)
+
+    filtered = [
+        item for item in top_results
+        if item["score"] >= min_score and item["score"] >= avg_score
+    ]
+    return filtered
+
 @router.get("/DB_search")
 def search_employees(
     user_id: str = Query(..., description="사용자 ID"),
@@ -136,7 +154,7 @@ def search_employees(
         es_result = es.search(
             index="categories",
             body={
-                "size": 1,
+                "size": 10,
                 "query": {
                     "script_score": {
                         "query": {
@@ -167,11 +185,28 @@ def search_employees(
     # ✅ 3. 검색 결과 확인
     hits = es_result.get("hits", {}).get("hits", [])
     if hits:
-        matched_source = hits[0]["_source"]
-        matched_category = matched_source["category_name"]
-        category_id = matched_source["category_id"]
+        hits_sorted = sorted(
+            hits, key=lambda x: x["_score"], reverse=True
+        )
+        similarity_results = [
+            {
+                "score": hit["_score"] - 1.0,
+                "category_id": hit["_source"]["category_id"],
+                "category_name": hit["_source"]["category_name"],
+            }
+            for hit in hits_sorted
+        ]
+
+        filtered_results = filter_top_categories(similarity_results, min_score=0.6, top_n=5)
+
+        if not filtered_results:
+            matched_category = "기타"
+            category_id = 0
+        else:
+            best_match = filtered_results[0]
+            matched_category = best_match["category_name"]
+            category_id = best_match["category_id"]
     else:
-        # 기본 카테고리 설정 (예: category_id=0, 기타)
         matched_category = "기타"
         category_id = 0
 
