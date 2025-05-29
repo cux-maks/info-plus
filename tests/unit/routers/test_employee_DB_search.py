@@ -12,12 +12,13 @@
 """
 
 import datetime
+from unittest.mock import patch
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import text
-from unittest.mock import patch
 
 from app.main import app
 from app.models import (
@@ -25,10 +26,10 @@ from app.models import (
     Category,
     Employee,
     EmployeeCategory,
-    Feature,
-    Users,
-    HireType,
     EmployeeHireType,
+    Feature,
+    HireType,
+    Users,
 )
 from app.utils.db_manager import db_manager
 

@@ -5,13 +5,15 @@
 """
 
 
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
-from sentence_transformers import SentenceTransformer
-from huggingface_hub import login
-from elasticsearch import Elasticsearch
 import os
+
 from dotenv import load_dotenv
+from elasticsearch import Elasticsearch
+from fastapi import APIRouter, Depends, HTTPException, Query
+from huggingface_hub import login
+from sentence_transformers import SentenceTransformer
+from sqlalchemy.orm import Session
+
 from app.models import Employee, EmployeeCategory, UserCategory, Users
 from app.utils.db_manager import db_manager
 
@@ -223,11 +225,11 @@ def search_employees(
     # ✅ 5. 결과를 JSON 형태로 정리
     results = [
         {
-            "title": job.title,             
-            "institution": job.institution, 
+            "title": job.title,
+            "institution": job.institution,
             "start_date": job.start_date.isoformat(),  # date → 문자열 (ISO 포맷)
             "end_date": job.end_date.isoformat(),
-            "url": job.detail_url          
+            "url": job.detail_url
         }
         for job in jobs
     ]

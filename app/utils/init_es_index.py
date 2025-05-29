@@ -1,9 +1,10 @@
 import os
-from dotenv import load_dotenv
-from sentence_transformers import SentenceTransformer
-from huggingface_hub import login
-from elasticsearch import Elasticsearch
+
 import requests
+from dotenv import load_dotenv
+from elasticsearch import Elasticsearch
+from huggingface_hub import login
+from sentence_transformers import SentenceTransformer
 
 # 환경변수 로딩
 load_dotenv()
