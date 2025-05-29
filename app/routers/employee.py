@@ -24,6 +24,7 @@ db_dependency = Depends(db_manager.get_db)  # 전역 변수로 설정
 load_dotenv()
 hf_token = os.getenv("HUGGINGFACE_TOKEN")
 
+
 # Hugging Face 로그인 (모델 로딩 전)
 if hf_token:
     login(token=hf_token)
@@ -33,6 +34,9 @@ model = SentenceTransformer("jhgan/ko-sroberta-multitask")
 
 # Elasticsearch 연결
 es = Elasticsearch(os.getenv("ES_HOST", "http://elasticsearch:9200"))
+
+# 모듈 레벨에서 의존성 정의
+get_db = Depends(db_manager.get_db)
 
 @router.get("/recommend")
 def get_recruit_recommendations(
@@ -123,7 +127,7 @@ def search_employees(
     user_id: str = Query(..., description="사용자 ID"),
     keyword: str = Query(..., description="검색할 카테고리 키워드 (예: '정보통신', '디자인')"),
     limit: int = Query(10, ge=1, le=100, description="검색 결과 최대 개수 (기본값: 10, 최대: 100)"),
-    db: Session = Depends(db_manager.get_db)
+    db: Session = get_db,
 ):
     """
     사용자가 입력한 키워드를 기반으로 가장 유사한 카테고리를 찾고, 해당 카테고리에 속한 채용 공고를 반환합니다.
@@ -177,12 +181,13 @@ def search_employees(
                 }
             }
         )
-    except ConnectionError:
-        raise HTTPException(status_code=500, detail="Elasticsearch 연결 실패")
+    except ConnectionError as conn_err:
+        raise HTTPException(status_code=500, detail="Elasticsearch 연결 실패") from conn_err
+
     except Exception as e:
         print("Elasticsearch 검색 중 에러 발생:", str(e))  # 로그 확인용
         print("상세 에러:", getattr(e, "info", None))  # 또는 e.body
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
     # ✅ 3. 검색 결과 확인
     hits = es_result.get("hits", {}).get("hits", [])
