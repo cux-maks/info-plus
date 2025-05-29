@@ -26,8 +26,8 @@ hf_token = os.getenv("HUGGINGFACE_TOKEN")
 if hf_token:
     login(token=hf_token)
 
-# 모델 로드 (384차원 벡터 출력)
-model = SentenceTransformer("all-MiniLM-L6-v2")
+# 모델 로드
+model = SentenceTransformer("jhgan/ko-sroberta-multitask")
 
 # Elasticsearch 연결
 es = Elasticsearch(os.getenv("ES_HOST", "http://elasticsearch:9200"))
@@ -149,8 +149,8 @@ def search_employees(
 
     # ✅ 2. Elasticsearch 유사 카테고리 검색
     try:
-        embedding = model.encode(keyword).tolist()
-        print("쿼리 벡터 차원:", len(embedding))  # 384가 나와야 정상
+        embedding = model.encode(keyword, normalize_embeddings=True).tolist()
+        print("쿼리 벡터 차원:", len(embedding))  # 쿼리 벡터 차원
         es_result = es.search(
             index="categories",
             body={
@@ -197,7 +197,7 @@ def search_employees(
             for hit in hits_sorted
         ]
 
-        filtered_results = filter_top_categories(similarity_results, min_score=0.6, top_n=5)
+        filtered_results = filter_top_categories(similarity_results, min_score=0.7, top_n=5)
 
         if not filtered_results:
             matched_category = "기타"

@@ -3,18 +3,20 @@ from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer
 from huggingface_hub import login
 from elasticsearch import Elasticsearch
-import requests  # 추가
+import requests
 
 # 환경변수 로딩
 load_dotenv()
 hf_token = os.getenv("HUGGINGFACE_TOKEN")
 
-# Hugging Face 로그인 (모델 로딩 전)
+# Hugging Face 로그인
 if hf_token:
     login(token=hf_token)
 
-# 모델 로드 (384차원 벡터 출력)
-model = SentenceTransformer("all-MiniLM-L6-v2")
+# ✅ 한국어 모델 로드 (임베딩 차원 자동 추정)
+model = SentenceTransformer("jhgan/ko-sroberta-multitask")
+embedding_dim = model.get_sentence_embedding_dimension()
+print(f"[ℹ️] 임베딩 차원: {embedding_dim}")
 
 # Elasticsearch 연결
 es = Elasticsearch("http://localhost:9200")
@@ -22,8 +24,7 @@ es = Elasticsearch("http://localhost:9200")
 # 인덱스명
 INDEX_NAME = "categories"
 
-# 카테고리 목록 (생략)
-
+# 카테고리 목록
 CATEGORIES = [
     {"category_id": 1, "category_name": "IT/과학", "feature": "news"},
     {"category_id": 2, "category_name": "마케팅", "feature": "news"},
@@ -89,7 +90,7 @@ def check_index_exists(index_name: str) -> bool:
 def create_category_index():
     """
     Elasticsearch에 'categories' 인덱스를 생성하고,
-    카테고리 데이터를 384차원 임베딩 벡터와 함께 색인한다.
+    카테고리 데이터를 768차원 임베딩 벡터와 함께 색인한다.
 
     기존 인덱스가 존재할 경우 삭제 후 새로 생성한다.
 
@@ -140,7 +141,7 @@ def create_category_index():
                         },
                         "category_vector": {
                             "type": "dense_vector",
-                            "dims": 384
+                            "dims": embedding_dim  # ✅ 자동 추정된 차원 사용
                         }
                     }
                 }
@@ -148,18 +149,17 @@ def create_category_index():
         )
         print(f"[✅] 인덱스 '{INDEX_NAME}' 생성 완료")
     except Exception as e:
-        print("[❌] 인덱스 생성 실패:", e)
+        print(f"[❌] 인덱스 생성 실패: {e}")
         return
 
-    # 데이터 색인
     for cat in CATEGORIES:
-        embedding = model.encode(cat["category_name"]).tolist()
-        doc = {
-            **cat,
-            "category_vector": embedding
-        }
         try:
-            es.index(index=INDEX_NAME, document=doc)
+            embedding = model.encode(cat["category_name"], normalize_embeddings=True).tolist()
+            doc = {
+                **cat,
+                "category_vector": embedding
+            }
+            es.index(index=INDEX_NAME, id=cat["category_id"], document=doc)  # ✅ ID 지정
         except Exception as e:
             print(f"[❌] 문서 색인 실패 (category_id={cat['category_id']}): {e}")
 
