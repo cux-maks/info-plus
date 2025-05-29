@@ -1,3 +1,19 @@
+"""
+카테고리 정보를 Elasticsearch에 벡터 기반으로 색인하는 초기화 스크립트.
+
+이 스크립트는 다음과 같은 기능을 수행합니다:
+1. Hugging Face에 로그인하여 한국어 SentenceTransformer 모델(jhgan/ko-sroberta-multitask)을 불러옵니다.
+2. 카테고리명을 해당 모델로 임베딩(벡터화)하여 Elasticsearch의 'categories' 인덱스에 저장합니다.
+3. 기존 인덱스가 존재할 경우 삭제 후 edge_ngram 분석기를 적용한 새 인덱스를 생성합니다.
+4. 카테고리명으로 부분 검색이 가능하며, 유사 카테고리 검색을 위한 dense_vector 필드를 포함합니다.
+
+사용 전제 조건:
+- .env 파일에 HUGGINGFACE_TOKEN이 포함되어 있어야 함
+- Elasticsearch 서버가 localhost:9200에서 실행 중이어야 함
+
+실행 방법:
+$ python init_es_index.py
+"""
 import os
 
 import requests
