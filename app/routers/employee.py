@@ -5,7 +5,13 @@
 """
 
 
+import os
+
+from dotenv import load_dotenv
+from elasticsearch import Elasticsearch
 from fastapi import APIRouter, Depends, HTTPException, Query
+from huggingface_hub import login
+from sentence_transformers import SentenceTransformer
 from sqlalchemy.orm import Session
 
 from app.models import Employee, EmployeeCategory, UserCategory, Users
@@ -14,6 +20,23 @@ from app.utils.db_manager import db_manager
 router = APIRouter()
 db_dependency = Depends(db_manager.get_db)  # 전역 변수로 설정
 
+# 환경변수 로딩
+load_dotenv()
+hf_token = os.getenv("HUGGINGFACE_TOKEN")
+
+
+# Hugging Face 로그인 (모델 로딩 전)
+if hf_token:
+    login(token=hf_token)
+
+# 모델 로드
+model = SentenceTransformer("jhgan/ko-sroberta-multitask")
+
+# Elasticsearch 연결
+es = Elasticsearch(os.getenv("ES_HOST", "http://elasticsearch:9200"))
+
+# 모듈 레벨에서 의존성 정의
+get_db = Depends(db_manager.get_db)
 
 @router.get("/recommend")
 def get_recruit_recommendations(
@@ -79,4 +102,145 @@ def get_recruit_recommendations(
     return {
         "results": jobs,
         "message": message
+    }
+
+def filter_top_categories(similarity_results, min_score=0.6, top_n=5):
+    """
+    유사도 결과 필터링
+    - min_score 이상
+    - top_n 중 평균 이상
+    """
+    top_results = similarity_results[:top_n]
+    if not top_results:
+        return []
+
+    avg_score = sum([item["score"] for item in top_results]) / len(top_results)
+
+    filtered = [
+        item for item in top_results
+        if item["score"] >= min_score and item["score"] >= avg_score
+    ]
+    return filtered
+
+@router.get("/DB_search")
+def search_employees(
+    user_id: str = Query(..., description="사용자 ID"),
+    keyword: str = Query(..., description="검색할 카테고리 키워드 (예: '정보통신', '디자인')"),
+    limit: int = Query(10, ge=1, le=100, description="검색 결과 최대 개수 (기본값: 10, 최대: 100)"),
+    db: Session = get_db,
+):
+    """
+    사용자가 입력한 키워드를 기반으로 가장 유사한 카테고리를 찾고, 해당 카테고리에 속한 채용 공고를 반환합니다.
+
+    Args:
+        user_id (str): 검색을 수행할 사용자 ID.
+        q (str): 검색 키워드 (카테고리명).
+        limit (int): 반환할 채용 공고 수 (기본값: 10, 최대 100).
+        db (Session): 데이터베이스 세션 객체.
+
+    Returns:
+        dict: 매칭된 카테고리명과 해당 카테고리에 속한 채용 공고 목록.
+            - matched_category (str): 검색 키워드와 가장 유사한 카테고리명.
+            - results (List[dict]): 채용공고 목록 (제목, 기관, 시작일, 종료일, 상세 URL 포함).
+
+    Raises:
+        HTTPException 404: 사용자가 존재하지 않는 경우.
+        HTTPException 404: 키워드와 일치하는 카테고리를 찾을 수 없는 경우.
+    """
+
+    # ✅ 1. 사용자 존재 여부 확인
+    user = db.query(Users).filter(Users.user_id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # ✅ 2. Elasticsearch 유사 카테고리 검색
+    try:
+        embedding = model.encode(keyword, normalize_embeddings=True).tolist()
+        print("쿼리 벡터 차원:", len(embedding))  # 쿼리 벡터 차원
+        es_result = es.search(
+            index="categories",
+            body={
+                "size": 10,
+                "query": {
+                    "script_score": {
+                        "query": {
+                            "bool": {
+                                "filter": [
+                                    {"exists": {"field": "category_vector"}},
+                                    {"term": {"feature": "employee"}}
+                                ]
+                            }
+                        },
+                        "script": {
+                            "source": "cosineSimilarity(params.query_vector, 'category_vector') + 1.0",
+                            "params": {
+                                "query_vector": embedding
+                            }
+                        }
+                    }
+                }
+            }
+        )
+    except ConnectionError as conn_err:
+        raise HTTPException(status_code=500, detail="Elasticsearch 연결 실패") from conn_err
+
+    except Exception as e:
+        print("Elasticsearch 검색 중 에러 발생:", str(e))  # 로그 확인용
+        print("상세 에러:", getattr(e, "info", None))  # 또는 e.body
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+    # ✅ 3. 검색 결과 확인
+    hits = es_result.get("hits", {}).get("hits", [])
+    if hits:
+        hits_sorted = sorted(
+            hits, key=lambda x: x["_score"], reverse=True
+        )
+        similarity_results = [
+            {
+                "score": hit["_score"] - 1.0,
+                "category_id": hit["_source"]["category_id"],
+                "category_name": hit["_source"]["category_name"],
+            }
+            for hit in hits_sorted
+        ]
+
+        filtered_results = filter_top_categories(similarity_results, min_score=0.7, top_n=5)
+
+        if not filtered_results:
+            matched_category = "기타"
+            category_id = 0
+        else:
+            best_match = filtered_results[0]
+            matched_category = best_match["category_name"]
+            category_id = best_match["category_id"]
+    else:
+        matched_category = "기타"
+        category_id = 0
+
+    # ✅ 4. 해당 카테고리에 속한 채용 공고를 최신순으로 조회
+    jobs = (
+        db.query(Employee)
+        .join(EmployeeCategory, Employee.recruit_id == EmployeeCategory.recruit_id)
+        .filter(EmployeeCategory.category_id == category_id)
+        .order_by(Employee.start_date.desc())
+        .limit(limit)
+        .all()
+    )
+
+    # ✅ 5. 결과를 JSON 형태로 정리
+    results = [
+        {
+            "title": job.title,
+            "institution": job.institution,
+            "start_date": job.start_date.isoformat(),  # date → 문자열 (ISO 포맷)
+            "end_date": job.end_date.isoformat(),
+            "url": job.detail_url
+        }
+        for job in jobs
+    ]
+
+    # ✅ 6. 최종 응답 반환
+    return {
+        "matched_category": matched_category,
+        "results": results
     }

@@ -70,6 +70,9 @@ def add_default_categories(db):
         Category(category_name="환경·에너지·안전", feature=feature_employee),
         Category(category_name="농림어업", feature=feature_employee),
         Category(category_name="연구", feature=feature_employee),
+
+        
+        Category(category_id = 0, category_name="연구", feature=feature_employee),
     ]
 
     for category in categories:
