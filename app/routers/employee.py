@@ -89,7 +89,7 @@ def search_employees(
     user_id: str = Query(..., description="사용자 ID"),
     keyword: str = Query(..., description="검색할 카테고리 키워드 (예: '정보통신', '디자인')"),
     limit: int = Query(10, ge=1, le=100, description="검색 결과 최대 개수 (기본값: 10, 최대: 100)"),
-    db: Session = Depends(db_manager.get_db)
+    db: Session = db_dependency
 ):
     """
     사용자가 입력한 키워드를 기반으로 가장 유사한 카테고리를 찾고, 해당 카테고리에 속한 채용 공고를 반환합니다.
@@ -181,10 +181,10 @@ def search_employees(
                 matched_category = prefix_hits[0]["_source"]["category_name"]
                 category_id = prefix_hits[0]["_source"]["category_id"]
 
-    except ConnectionError:
-        raise HTTPException(status_code=500, detail="Elasticsearch 연결 실패")
+    except ConnectionError as e:
+        raise HTTPException(status_code=500, detail="Elasticsearch 연결 실패") from e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
     # ✅ 3. 해당 카테고리에 속한 채용 공고 최신순 조회
     jobs = (

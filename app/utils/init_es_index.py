@@ -49,11 +49,9 @@ CATEGORIES = [
 
 def create_category_index():
     """
-    Elasticsearch에 'categories' 인덱스를 생성하고, 
+    Elasticsearch에 'categories' 인덱스를 생성하고,
     사전에 정의된 CATEGORIES 리스트의 데이터를 색인한다.
-    
     기존에 'categories' 인덱스가 존재하면 삭제 후 새로 생성한다.
-    
     인덱스 매핑은 다음과 같다:
     - category_id: 정수형
     - category_name: 텍스트, edge_ngram 기반 자동완성(analyzer: autocomplete) 적용
