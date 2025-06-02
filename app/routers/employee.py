@@ -5,10 +5,12 @@
 """
 
 
+import os
+
+from elasticsearch import Elasticsearch
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from elasticsearch import Elasticsearch
-import os
+
 from app.models import Employee, EmployeeCategory, UserCategory, Users
 from app.utils.db_manager import db_manager
 
@@ -144,7 +146,6 @@ def search_employees(
             category_id = 0
         else:
             candidate_names = [hit["_source"]["category_name"] for hit in prefix_hits]
-            candidate_ids = {hit["_source"]["category_name"]: hit["_source"]["category_id"] for hit in prefix_hits}
 
             # ✅ 2-2. BM25 기반 match 쿼리로 후보군 중 가장 유사한 카테고리 검색
             bm25_result = es.search(
@@ -198,11 +199,11 @@ def search_employees(
     # ✅ 4. 결과를 JSON 형태로 정리
     results = [
         {
-            "title": job.title,             
-            "institution": job.institution, 
+            "title": job.title,
+            "institution": job.institution,
             "start_date": job.start_date.isoformat(),  # date → 문자열 (ISO 포맷)
             "end_date": job.end_date.isoformat(),
-            "url": job.detail_url          
+            "url": job.detail_url
         }
         for job in jobs
     ]
