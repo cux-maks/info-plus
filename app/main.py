@@ -17,12 +17,6 @@ from app.routers.feature import router as feature_router
 from app.routers.news import router as news_router
 from app.routers.user import router as user_router
 
-# ✅ 인덱스 초기화 함수 불러오기
-from app.utils.init_es_index import create_category_index
-
-# ✅ 인덱스 초기화 (docker-compose up 시 실행)
-create_category_index()
-
 app = FastAPI(
     title="KakaoTalk Chatbot API",
     description="KakaoTalk Chatbot Template API",
