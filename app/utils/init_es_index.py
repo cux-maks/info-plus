@@ -1,3 +1,10 @@
+"""
+Elasticsearch에 카테고리 정보를 색인하는 모듈입니다.
+이 모듈은 사전에 정의된 카테고리 리스트(CATEGORIES)를 기반으로
+Elasticsearch 'categories' 인덱스를 생성하고, 자동완성 기능을 지원하기 위해
+edge_ngram 분석기를 적용한 매핑을 설정합니다.
+주요 기능은 인덱스 삭제 후 재생성 및 초기 데이터 삽입입니다.
+"""
 from elasticsearch import Elasticsearch
 
 es = Elasticsearch("http://localhost:9200")
@@ -41,6 +48,17 @@ CATEGORIES = [
 ]
 
 def create_category_index():
+    """
+    Elasticsearch에 'categories' 인덱스를 생성하고, 
+    사전에 정의된 CATEGORIES 리스트의 데이터를 색인한다.
+    
+    기존에 'categories' 인덱스가 존재하면 삭제 후 새로 생성한다.
+    
+    인덱스 매핑은 다음과 같다:
+    - category_id: 정수형
+    - category_name: 텍스트, edge_ngram 기반 자동완성(analyzer: autocomplete) 적용
+    - feature: 키워드형, 카테고리 구분용 (예: 'news', 'employee')
+    """
     if es.indices.exists(index="categories"):
         es.indices.delete(index="categories")
 
@@ -83,4 +101,8 @@ def create_category_index():
         es.index(index="categories", document=cat)
 
 if __name__ == "__main__":
+    """
+    메인 실행 시 create_category_index() 함수를 호출하여
+    Elasticsearch에 'categories' 인덱스를 생성하고 초기 데이터를 색인한다.
+    """
     create_category_index()

@@ -94,7 +94,7 @@ def search_employees(
 
     Args:
         user_id (str): 검색을 수행할 사용자 ID.
-        q (str): 검색 키워드 (카테고리명).
+        keyword (str): 검색 키워드 (카테고리명).
         limit (int): 반환할 채용 공고 수 (기본값: 10, 최대 100).
         db (Session): 데이터베이스 세션 객체.
 
@@ -105,7 +105,7 @@ def search_employees(
 
     Raises:
         HTTPException 404: 사용자가 존재하지 않는 경우.
-        HTTPException 404: 키워드와 일치하는 카테고리를 찾을 수 없는 경우.
+        HTTPException 500: Elasticsearch 연결 실패 또는 기타 오류 발생 시.
     """
 
     # ✅ 1. 사용자 존재 여부 확인
@@ -113,12 +113,12 @@ def search_employees(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # ✅ 2. Elasticsearch 유사 카테고리 검색
     try:
-        es_result = es.search(
+        # ✅ 2-1. match_phrase_prefix로 후보군 검색 (자동완성 역할)
+        prefix_result = es.search(
             index="categories",
             body={
-                "size": 1,
+                "size": 10,
                 "query": {
                     "bool": {
                         "must": {
@@ -130,30 +130,62 @@ def search_employees(
                         },
                         "filter": {
                             "term": {
-                                "feature": "employee"  # ✅ 'employee' 기능 카테고리만 필터링
+                                "feature": "employee"
                             }
                         }
                     }
                 }
             }
         )
+        prefix_hits = prefix_result.get("hits", {}).get("hits", [])
+        if not prefix_hits:
+            # 후보군 없으면 바로 기타 처리
+            matched_category = "기타"
+            category_id = 0
+        else:
+            candidate_names = [hit["_source"]["category_name"] for hit in prefix_hits]
+            candidate_ids = {hit["_source"]["category_name"]: hit["_source"]["category_id"] for hit in prefix_hits}
+
+            # ✅ 2-2. BM25 기반 match 쿼리로 후보군 중 가장 유사한 카테고리 검색
+            bm25_result = es.search(
+                index="categories",
+                body={
+                    "size": 1,
+                    "query": {
+                        "bool": {
+                            "must": {
+                                "match": {
+                                    "category_name": {
+                                        "query": keyword,
+                                        "operator": "and"
+                                    }
+                                }
+                            },
+                            "filter": {
+                                "terms": {
+                                    "category_name.keyword": candidate_names  # 후보군 필터링
+                                }
+                            }
+                        }
+                    }
+                }
+            )
+            bm25_hits = bm25_result.get("hits", {}).get("hits", [])
+            if bm25_hits:
+                matched_source = bm25_hits[0]["_source"]
+                matched_category = matched_source["category_name"]
+                category_id = matched_source["category_id"]
+            else:
+                # BM25가 후보군 중 적합한 것을 못 찾으면 prefix 후보 중 1순위 반환
+                matched_category = prefix_hits[0]["_source"]["category_name"]
+                category_id = prefix_hits[0]["_source"]["category_id"]
+
     except ConnectionError:
         raise HTTPException(status_code=500, detail="Elasticsearch 연결 실패")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-    # ✅ 3. 검색 결과 확인
-    hits = es_result.get("hits", {}).get("hits", [])
-    if hits:
-        matched_source = hits[0]["_source"]
-        matched_category = matched_source["category_name"]
-        category_id = matched_source["category_id"]
-    else:
-        # 기본 카테고리 설정 (예: category_id=0, 기타)
-        matched_category = "기타"
-        category_id = 0
-
-    # ✅ 4. 해당 카테고리에 속한 채용 공고를 최신순으로 조회
+    # ✅ 3. 해당 카테고리에 속한 채용 공고 최신순 조회
     jobs = (
         db.query(Employee)
         .join(EmployeeCategory, Employee.recruit_id == EmployeeCategory.recruit_id)
@@ -163,7 +195,7 @@ def search_employees(
         .all()
     )
 
-    # ✅ 5. 결과를 JSON 형태로 정리
+    # ✅ 4. 결과를 JSON 형태로 정리
     results = [
         {
             "title": job.title,             
@@ -175,7 +207,7 @@ def search_employees(
         for job in jobs
     ]
 
-    # ✅ 6. 최종 응답 반환
+    # ✅ 5. 최종 응답 반환
     return {
         "matched_category": matched_category,
         "results": results
