@@ -57,8 +57,11 @@ def create_category_index():
     - category_name: 텍스트, edge_ngram 기반 자동완성(analyzer: autocomplete) 적용
     - feature: 키워드형, 카테고리 구분용 (예: 'news', 'employee')
     """
+    index_name = "categories"
+
     if es.indices.exists(index="categories"):
         es.indices.delete(index="categories")
+        print(f"🗑️ 기존 Elasticsearch 인덱스 '{index_name}' 삭제 완료")
 
     index_body = {
         "settings": {
@@ -93,10 +96,22 @@ def create_category_index():
         }
     }
 
-    es.indices.create(index="categories", body=index_body)
+    try:
+        es.indices.create(index=index_name, body=index_body)
+        print(f"✅ Elasticsearch 인덱스 '{index_name}' 생성 완료")
+    except Exception as e:
+        print(f"❌ 인덱스 생성 실패: {e}")
+        return
 
+    success_count = 0
     for cat in CATEGORIES:
-        es.index(index="categories", document=cat)
+        try:
+            es.index(index=index_name, document=cat)
+            success_count += 1
+        except Exception as e:
+            print(f"⚠️ 색인 실패 (카테고리: {cat['category_name']}): {e}")
+
+    print(f"📦 총 {success_count}개의 카테고리가 '{index_name}' 인덱스에 색인됨")
 
 if __name__ == "__main__":
     """

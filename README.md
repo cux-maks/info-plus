@@ -44,6 +44,7 @@ FastAPI와 MySQL을 사용한 카카오톡 챗봇 개발을 위한 템플릿 프
 │   │   ├── __init__.py
 │   │   ├── db_manager.py
 │   │   ├── init_default_data.py
+│   │   ├── init_elasticsearch_index.py
 │   │   ├── insert_employee_data.py
 │   │   ├── news_client.py
 │   │   ├── news_provider_mapping.py
@@ -57,6 +58,7 @@ FastAPI와 MySQL을 사용한 카카오톡 챗봇 개발을 위한 템플릿 프
 │       ├── routers/
 │       ├── test_add_employee_data.py
 │       ├── test_add_user_favorit.py
+│       ├── test_employee_DB_search.py
 │       ├── test_employee_recommendation.py
 │       ├── test_get_categories_by_feature.py
 │       ├── test_get_my_category_list.py
