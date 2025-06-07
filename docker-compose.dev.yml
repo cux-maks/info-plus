@@ -50,7 +50,7 @@ services:
     ports:
       - '9200:9200'
     volumes:
-      - esdata:/usr/share/elasticsearch/data
+      - ./volumes/esdata:/usr/share/elasticsearch/data
     networks:
       - default
 
