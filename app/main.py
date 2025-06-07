@@ -31,7 +31,8 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="KakaoTalk Chatbot API",
     description="KakaoTalk Chatbot Template API",
-    version="0.1.0"
+    version="0.1.0",
+    lifespan=lifespan
 )
 
 # CORS 미들웨어 설정
