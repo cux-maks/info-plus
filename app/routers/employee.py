@@ -4,9 +4,6 @@
 사용자의 구독 정보를 바탕으로 관련된 채용 공고를 필터링하여 반환합니다.
 """
 
-
-import os
-
 from elasticsearch import Elasticsearch
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
