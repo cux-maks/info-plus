@@ -21,8 +21,10 @@ services:
     volumes:
       - ./app:/app
     depends_on:
-      - db
-      - elasticsearch # <-- Elasticsearch 먼저 기동되도록 추가
+      db:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
     networks:
       - default
 
@@ -37,6 +39,12 @@ services:
     volumes:
       - ./volumes/db:/var/lib/postgresql/data
     command: -p ${DB_PORT}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME} -p ${DB_PORT}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     networks:
       - default
 
@@ -51,6 +59,12 @@ services:
       - '9200:9200'
     volumes:
       - ./volumes/esdata:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
     networks:
       - default
 
