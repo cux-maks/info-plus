@@ -7,7 +7,7 @@ edge_ngram 분석기를 적용한 매핑을 설정합니다.
 """
 from elasticsearch import Elasticsearch
 
-es = Elasticsearch("http://localhost:9200")
+es = Elasticsearch("http://elasticsearch:9200")
 
 CATEGORIES = [
     {"category_id": 1, "category_name": "IT/과학", "feature": "news"},
