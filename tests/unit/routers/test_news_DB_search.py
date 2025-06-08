@@ -18,7 +18,7 @@ from app.models import (
 from app.utils.db_manager import db_manager
 
 # 테스트용 SQLite DB 설정
-TEST_DATABASE_URL = "sqlite:///./test_news.db"
+TEST_DATABASE_URL = "sqlite:///./test.db"
 engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -39,6 +39,7 @@ def setup_database():
         Base.metadata.drop_all(bind=conn)  # 기존 테이블 삭제
         Base.metadata.create_all(bind=conn)  # 테이블 생성
 
+# 테스트용 DB 세션 및 테스트 데이터 삽입
 @pytest.fixture(scope="function")
 def test_db(setup_database):
     """
@@ -53,22 +54,25 @@ def test_db(setup_database):
         Session: 테스트용 SQLAlchemy DB 세션
     """
     db = TestingSessionLocal()
-    
+
     # 기존 데이터 삭제
     db.query(Category).delete()
     db.query(Feature).delete()
     db.query(Users).delete()
     db.commit()
 
-    user = Users(user_id="user123", user_name="홍길동")
-    feature = Feature(feature_type="news")
-    db.add_all([user, feature])
+    # ✅ 테스트 데이터 삽입
+    user = Users(user_id="user123", user_name="John Doe")
+    db.add(user)
     db.commit()
+    db.refresh(user)  # ✅ user_id 생성 확인
 
-    db.refresh(user)
-    db.refresh(feature)
+    feature = Feature(feature_type="News")
+    db.add(feature)
+    db.commit()
+    db.refresh(feature)  # ✅ id 생성 확인
 
-    category = Category(feature_id=1, category_name="보건")
+    category = Category(feature_id=feature.feature_id, category_name="보건")
     db.add(category)
     db.commit()
     db.refresh(category)
@@ -76,9 +80,9 @@ def test_db(setup_database):
     news_item = News(
         news_id=1,
         category_id=category.category_id,
-        title="테스트 뉴스",
+        title="보건 정책 변화",
         contents="테스트 뉴스 내용",
-        source="테스트 기관",
+        source="뉴스타임",
         publish_date=datetime.datetime(2023, 6, 7, 9, 51),
         category="기타",
         url="http://testnews.com/article",
@@ -95,6 +99,7 @@ def test_db(setup_database):
     db.close()  # 세션 종료
     Base.metadata.drop_all(bind=engine)  # 테스트 끝나면 DB 초기화
 
+# ✅ FastAPI 의존성 오버라이드 설정
 def override_get_db():
     """
     FastAPI 의존성 오버라이드용 함수.
@@ -113,6 +118,7 @@ def override_get_db():
 
 app.dependency_overrides[db_manager.get_db] = override_get_db
 
+# FastAPI 테스트 클라이언트
 @pytest.fixture(scope="function")
 def client():
     """
@@ -131,32 +137,26 @@ def test_search_news_success(mock_es_search, client, test_db):
     관련 채용 공고가 올바르게 반환되는지 검증하는 테스트입니다.
     """
     mock_es_search.side_effect = [
-        # match_phrase_prefix 응답
         {
             "hits": {
-                "hits": [
-                    {
-                        "_source": {
-                            "category_name": "보건",
-                            "category_id": 1,
-                            "feature": "news"
-                        }
+                "hits": [{
+                    "_source": {
+                        "category_name": "보건",
+                        "category_id": 1,
+                        "feature": "news"
                     }
-                ]
+                }]
             }
         },
-        # BM25 응답
         {
             "hits": {
-                "hits": [
-                    {
-                        "_source": {
-                            "category_name": "보건",
-                            "category_id": 1,
-                            "feature": "news"
-                        }
+                "hits": [{
+                    "_source": {
+                        "category_name": "보건",
+                        "category_id": 1,
+                        "feature": "news"
                     }
-                ]
+                }]
             }
         }
     ]
@@ -169,7 +169,7 @@ def test_search_news_success(mock_es_search, client, test_db):
     assert data["results"][0]["title"] == "보건 정책 변화"
     assert data["results"][0]["source"] == "뉴스타임"
 
-# 🔹 사용자 미존재 테스트
+# ✅ 사용자 미존재 테스트
 def test_search_news_user_not_found(client, setup_database):
     """
     존재하지 않는 사용자 ID로 검색 요청 시
@@ -179,23 +179,21 @@ def test_search_news_user_not_found(client, setup_database):
     assert response.status_code == 404
     assert response.json()["detail"] == "User not found"
 
-# 🔹 Elasticsearch에서 카테고리 미검색 시 기본값 처리 테스트
+# ✅ 키워드 미일치 → 기본 카테고리 '기타' 처리
 @patch("app.routers.news.es.search")
 def test_search_news_no_matching_category(mock_es_search, client, test_db):
     """
     Elasticsearch에서 키워드에 해당하는 카테고리가 검색되지 않을 때
     기본값 '기타' 카테고리로 처리되고 빈 결과가 반환되는지 검증합니다.
     """
-    mock_es_search.return_value = {
-        "hits": {"hits": []}  # match_phrase_prefix 결과 없음
-    }
+    mock_es_search.return_value = {"hits": {"hits": []}}
     response = client.get("/news/DB_search", params={"user_id": "user123", "keyword": "미확인키워드"})
     assert response.status_code == 200
     data = response.json()
     assert data["matched_category"] == "기타"
     assert data["results"] == []
 
-# 🔹 해당 카테고리에 뉴스가 없을 경우
+# ✅ ES는 결과 줬지만 DB에 해당 category_id가 없음
 @patch("app.routers.news.es.search")
 def test_search_news_category_not_in_db(mock_es_search, client, test_db):
     """
@@ -204,25 +202,22 @@ def test_search_news_category_not_in_db(mock_es_search, client, test_db):
     """
     mock_es_search.return_value = {
         "hits": {
-            "hits": [
-                {
-                    "_source": {
-                        "category_name": "존재하지않음",
-                        "category_id": 9999,  # DB에 존재하지 않음
-                        "feature": "news"
-                    }
+            "hits": [{
+                "_source": {
+                    "category_name": "존재하지않음",
+                    "category_id": 9999,
+                    "feature": "news"
                 }
-            ]
+            }]
         }
     }
-
     response = client.get("/news/DB_search", params={"user_id": "user123", "keyword": "존재하지않음"})
     assert response.status_code == 200
     data = response.json()
     assert data["matched_category"] == "존재하지않음"
     assert data["results"] == []
 
-# 🔹 news API limit 파라미터 테스트 (최대 100, 기본 10 등)
+# ✅ limit 파라미터 유효성 검증
 @patch("app.routers.news.es.search")
 def test_search_news_limit_param(mock_es_search, client, test_db):
     """
@@ -234,36 +229,31 @@ def test_search_news_limit_param(mock_es_search, client, test_db):
     """
     mock_es_search.return_value = {
         "hits": {
-            "hits": [
-                {
-                    "_source": {
-                        "category_name": "보건",
-                        "category_id": 1,
-                        "feature": "news"
-                    }
+            "hits": [{
+                "_source": {
+                    "category_name": "보건",
+                    "category_id": 1,
+                    "feature": "news"
                 }
-            ]
+            }]
         }
     }
 
-    # 기본 limit=10
+    # 기본 limit = 10
     response = client.get("/news/DB_search", params={"user_id": "user123", "keyword": "보건"})
     assert response.status_code == 200
-    data = response.json()
-    assert "results" in data
+    assert "results" in response.json()
 
-    # limit=1 지정
+    # limit = 1
     response = client.get("/news/DB_search", params={"user_id": "user123", "keyword": "보건", "limit": 1})
     assert response.status_code == 200
-    data = response.json()
-    assert len(data["results"]) <= 1
+    assert len(response.json()["results"]) <= 1
 
-    # limit가 최대 100 초과 시도
+    # limit > 100 초과 → 422
     response = client.get("/news/DB_search", params={"user_id": "user123", "keyword": "보건", "limit": 101})
-    assert response.status_code == 422  # 유효성 검증 실패
+    assert response.status_code == 422
 
-
-# 🔹 news API Elasticsearch 연결 실패 예외 테스트
+# ✅ Elasticsearch 연결 실패 시
 @patch("app.routers.news.es.search", side_effect=ConnectionError)
 def test_search_news_es_connection_error(mock_es_search, client, test_db):
     """
@@ -274,8 +264,7 @@ def test_search_news_es_connection_error(mock_es_search, client, test_db):
     assert response.status_code == 500
     assert response.json() == {"detail": "Elasticsearch 연결 실패"}
 
-
-# 🔹 news API Elasticsearch 기타 예외 테스트
+# ✅ Elasticsearch 기타 예외 발생 시
 @patch("app.routers.news.es.search", side_effect=Exception("ES 오류"))
 def test_search_news_es_other_error(mock_es_search, client, test_db):
     """
